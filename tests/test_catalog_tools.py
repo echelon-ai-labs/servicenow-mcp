@@ -12,10 +12,16 @@ from servicenow_mcp.tools.catalog_tools import (
     GetCatalogItemParams,
     ListCatalogCategoriesParams,
     ListCatalogItemsParams,
+    CreateCatalogCategoryParams,
+    UpdateCatalogCategoryParams,
+    MoveCatalogItemsParams,
     get_catalog_item,
     get_catalog_item_variables,
     list_catalog_categories,
     list_catalog_items,
+    create_catalog_category,
+    update_catalog_category,
+    move_catalog_items,
 )
 from servicenow_mcp.utils.config import AuthConfig, AuthType, BasicAuthConfig, ServerConfig
 
@@ -304,6 +310,122 @@ class TestCatalogTools(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertEqual(len(result["categories"]), 0)
         self.assertIn("Error", result["message"])
+
+    @patch("requests.post")
+    def test_create_catalog_category(self, mock_post):
+        """Test creating a catalog category."""
+        # Mock response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "result": {
+                "sys_id": "test_sys_id",
+                "title": "Test Category",
+                "description": "Test Description",
+                "parent": "",
+                "icon": "icon-test",
+                "active": "true",
+                "order": "100",
+            }
+        }
+        mock_post.return_value = mock_response
+
+        # Create params
+        params = CreateCatalogCategoryParams(
+            title="Test Category",
+            description="Test Description",
+            icon="icon-test",
+            active=True,
+            order=100,
+        )
+
+        # Call function
+        result = create_catalog_category(self.config, self.auth_manager, params)
+
+        # Verify result
+        self.assertTrue(result.success)
+        self.assertEqual(result.data["title"], "Test Category")
+        self.assertEqual(result.data["sys_id"], "test_sys_id")
+
+        # Verify request
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], "https://example.service-now.com/api/now/table/sc_category")
+        self.assertEqual(kwargs["json"]["title"], "Test Category")
+        self.assertEqual(kwargs["json"]["description"], "Test Description")
+
+    @patch("requests.patch")
+    def test_update_catalog_category(self, mock_patch):
+        """Test updating a catalog category."""
+        # Mock response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "result": {
+                "sys_id": "test_sys_id",
+                "title": "Updated Category",
+                "description": "Updated Description",
+                "parent": "",
+                "icon": "icon-test",
+                "active": "true",
+                "order": "200",
+            }
+        }
+        mock_patch.return_value = mock_response
+
+        # Create params
+        params = UpdateCatalogCategoryParams(
+            category_id="test_sys_id",
+            title="Updated Category",
+            description="Updated Description",
+            order=200,
+        )
+
+        # Call function
+        result = update_catalog_category(self.config, self.auth_manager, params)
+
+        # Verify result
+        self.assertTrue(result.success)
+        self.assertEqual(result.data["title"], "Updated Category")
+        self.assertEqual(result.data["description"], "Updated Description")
+        self.assertEqual(result.data["order"], "200")
+
+        # Verify request
+        mock_patch.assert_called_once()
+        args, kwargs = mock_patch.call_args
+        self.assertEqual(args[0], "https://example.service-now.com/api/now/table/sc_category/test_sys_id")
+        self.assertEqual(kwargs["json"]["title"], "Updated Category")
+        self.assertEqual(kwargs["json"]["description"], "Updated Description")
+        self.assertEqual(kwargs["json"]["order"], "200")
+
+    @patch("requests.patch")
+    def test_move_catalog_items(self, mock_patch):
+        """Test moving catalog items."""
+        # Mock response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"result": {"sys_id": "item_id", "category": "target_category_id"}}
+        mock_patch.return_value = mock_response
+
+        # Create params
+        params = MoveCatalogItemsParams(
+            item_ids=["item1", "item2", "item3"],
+            target_category_id="target_category_id",
+        )
+
+        # Call function
+        result = move_catalog_items(self.config, self.auth_manager, params)
+
+        # Verify result
+        self.assertTrue(result.success)
+        self.assertEqual(result.data["moved_items_count"], 3)
+
+        # Verify request
+        self.assertEqual(mock_patch.call_count, 3)
+        for i, call in enumerate(mock_patch.call_args_list):
+            args, kwargs = call
+            self.assertEqual(
+                args[0], 
+                f"https://example.service-now.com/api/now/table/sc_cat_item/{params.item_ids[i]}"
+            )
+            self.assertEqual(kwargs["json"]["category"], "target_category_id")
 
 
 if __name__ == "__main__":

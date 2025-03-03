@@ -49,6 +49,36 @@ class CatalogResponse(BaseModel):
     data: Optional[Dict[str, Any]] = Field(None, description="Response data")
 
 
+class CreateCatalogCategoryParams(BaseModel):
+    """Parameters for creating a new service catalog category."""
+    
+    title: str = Field(..., description="Title of the category")
+    description: Optional[str] = Field(None, description="Description of the category")
+    parent: Optional[str] = Field(None, description="Parent category sys_id")
+    icon: Optional[str] = Field(None, description="Icon for the category")
+    active: bool = Field(True, description="Whether the category is active")
+    order: Optional[int] = Field(None, description="Order of the category")
+
+
+class UpdateCatalogCategoryParams(BaseModel):
+    """Parameters for updating a service catalog category."""
+    
+    category_id: str = Field(..., description="Category ID or sys_id")
+    title: Optional[str] = Field(None, description="Title of the category")
+    description: Optional[str] = Field(None, description="Description of the category")
+    parent: Optional[str] = Field(None, description="Parent category sys_id")
+    icon: Optional[str] = Field(None, description="Icon for the category")
+    active: Optional[bool] = Field(None, description="Whether the category is active")
+    order: Optional[int] = Field(None, description="Order of the category")
+
+
+class MoveCatalogItemsParams(BaseModel):
+    """Parameters for moving catalog items between categories."""
+    
+    item_ids: List[str] = Field(..., description="List of catalog item IDs to move")
+    target_category_id: str = Field(..., description="Target category ID to move items to")
+
+
 def list_catalog_items(
     config: ServerConfig,
     auth_manager: AuthManager,
@@ -357,4 +387,231 @@ def list_catalog_categories(
             "total": 0,
             "limit": params.limit,
             "offset": params.offset,
-        } 
+        }
+
+
+def create_catalog_category(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: CreateCatalogCategoryParams,
+) -> CatalogResponse:
+    """
+    Create a new service catalog category in ServiceNow.
+
+    Args:
+        config: Server configuration
+        auth_manager: Authentication manager
+        params: Parameters for creating a catalog category
+
+    Returns:
+        Response containing the result of the operation
+    """
+    logger.info("Creating new service catalog category")
+    
+    # Build the API URL
+    url = f"{config.instance_url}/api/now/table/sc_category"
+    
+    # Prepare request body
+    body = {
+        "title": params.title,
+    }
+    
+    if params.description is not None:
+        body["description"] = params.description
+    if params.parent is not None:
+        body["parent"] = params.parent
+    if params.icon is not None:
+        body["icon"] = params.icon
+    if params.active is not None:
+        body["active"] = str(params.active).lower()
+    if params.order is not None:
+        body["order"] = str(params.order)
+    
+    # Make the API request
+    headers = auth_manager.get_headers()
+    headers["Accept"] = "application/json"
+    headers["Content-Type"] = "application/json"
+    
+    try:
+        response = requests.post(url, headers=headers, json=body)
+        response.raise_for_status()
+        
+        # Process the response
+        result = response.json()
+        category = result.get("result", {})
+        
+        # Format the response
+        formatted_category = {
+            "sys_id": category.get("sys_id", ""),
+            "title": category.get("title", ""),
+            "description": category.get("description", ""),
+            "parent": category.get("parent", ""),
+            "icon": category.get("icon", ""),
+            "active": category.get("active", ""),
+            "order": category.get("order", ""),
+        }
+        
+        return CatalogResponse(
+            success=True,
+            message=f"Created catalog category: {params.title}",
+            data=formatted_category,
+        )
+    
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error creating catalog category: {str(e)}")
+        return CatalogResponse(
+            success=False,
+            message=f"Error creating catalog category: {str(e)}",
+            data=None,
+        )
+
+
+def update_catalog_category(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: UpdateCatalogCategoryParams,
+) -> CatalogResponse:
+    """
+    Update an existing service catalog category in ServiceNow.
+
+    Args:
+        config: Server configuration
+        auth_manager: Authentication manager
+        params: Parameters for updating a catalog category
+
+    Returns:
+        Response containing the result of the operation
+    """
+    logger.info(f"Updating service catalog category: {params.category_id}")
+    
+    # Build the API URL
+    url = f"{config.instance_url}/api/now/table/sc_category/{params.category_id}"
+    
+    # Prepare request body with only the provided parameters
+    body = {}
+    if params.title is not None:
+        body["title"] = params.title
+    if params.description is not None:
+        body["description"] = params.description
+    if params.parent is not None:
+        body["parent"] = params.parent
+    if params.icon is not None:
+        body["icon"] = params.icon
+    if params.active is not None:
+        body["active"] = str(params.active).lower()
+    if params.order is not None:
+        body["order"] = str(params.order)
+    
+    # Make the API request
+    headers = auth_manager.get_headers()
+    headers["Accept"] = "application/json"
+    headers["Content-Type"] = "application/json"
+    
+    try:
+        response = requests.patch(url, headers=headers, json=body)
+        response.raise_for_status()
+        
+        # Process the response
+        result = response.json()
+        category = result.get("result", {})
+        
+        # Format the response
+        formatted_category = {
+            "sys_id": category.get("sys_id", ""),
+            "title": category.get("title", ""),
+            "description": category.get("description", ""),
+            "parent": category.get("parent", ""),
+            "icon": category.get("icon", ""),
+            "active": category.get("active", ""),
+            "order": category.get("order", ""),
+        }
+        
+        return CatalogResponse(
+            success=True,
+            message=f"Updated catalog category: {params.category_id}",
+            data=formatted_category,
+        )
+    
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error updating catalog category: {str(e)}")
+        return CatalogResponse(
+            success=False,
+            message=f"Error updating catalog category: {str(e)}",
+            data=None,
+        )
+
+
+def move_catalog_items(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: MoveCatalogItemsParams,
+) -> CatalogResponse:
+    """
+    Move catalog items to a different category.
+
+    Args:
+        config: Server configuration
+        auth_manager: Authentication manager
+        params: Parameters for moving catalog items
+
+    Returns:
+        Response containing the result of the operation
+    """
+    logger.info(f"Moving {len(params.item_ids)} catalog items to category: {params.target_category_id}")
+    
+    # Build the API URL
+    url = f"{config.instance_url}/api/now/table/sc_cat_item"
+    
+    # Make the API request for each item
+    headers = auth_manager.get_headers()
+    headers["Accept"] = "application/json"
+    headers["Content-Type"] = "application/json"
+    
+    success_count = 0
+    failed_items = []
+    
+    try:
+        for item_id in params.item_ids:
+            item_url = f"{url}/{item_id}"
+            body = {
+                "category": params.target_category_id
+            }
+            
+            try:
+                response = requests.patch(item_url, headers=headers, json=body)
+                response.raise_for_status()
+                success_count += 1
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Error moving catalog item {item_id}: {str(e)}")
+                failed_items.append({"item_id": item_id, "error": str(e)})
+        
+        # Prepare the response
+        if success_count == len(params.item_ids):
+            return CatalogResponse(
+                success=True,
+                message=f"Successfully moved {success_count} catalog items to category {params.target_category_id}",
+                data={"moved_items_count": success_count},
+            )
+        elif success_count > 0:
+            return CatalogResponse(
+                success=True,
+                message=f"Partially moved catalog items. {success_count} succeeded, {len(failed_items)} failed.",
+                data={
+                    "moved_items_count": success_count,
+                    "failed_items": failed_items,
+                },
+            )
+        else:
+            return CatalogResponse(
+                success=False,
+                message="Failed to move any catalog items",
+                data={"failed_items": failed_items},
+            )
+    
+    except Exception as e:
+        logger.error(f"Error moving catalog items: {str(e)}")
+        return CatalogResponse(
+            success=False,
+            message=f"Error moving catalog items: {str(e)}",
+            data=None,
+        ) 

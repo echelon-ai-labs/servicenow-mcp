@@ -4,7 +4,14 @@ Tools module for the ServiceNow MCP server.
 
 # Import tools as they are implemented
 from servicenow_mcp.tools.incident_tools import create_incident, update_incident, add_comment, resolve_incident, list_incidents
-from servicenow_mcp.tools.catalog_tools import list_catalog_items, get_catalog_item, list_catalog_categories
+from servicenow_mcp.tools.catalog_tools import (
+    list_catalog_items, 
+    get_catalog_item, 
+    list_catalog_categories,
+    create_catalog_category,
+    update_catalog_category,
+    move_catalog_items
+)
 from servicenow_mcp.tools.catalog_optimization import get_optimization_recommendations, update_catalog_item
 from servicenow_mcp.tools.change_tools import (
     create_change_request,
@@ -61,6 +68,9 @@ __all__ = [
     "list_catalog_items",
     "get_catalog_item",
     "list_catalog_categories",
+    "create_catalog_category",
+    "update_catalog_category",
+    "move_catalog_items",
     "get_optimization_recommendations",
     "update_catalog_item",
     

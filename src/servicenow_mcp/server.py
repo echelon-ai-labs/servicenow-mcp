@@ -6,6 +6,7 @@ This module provides the main implementation of the ServiceNow MCP server.
 
 import os
 from typing import Dict, Union, Any
+import json
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
@@ -23,6 +24,9 @@ from servicenow_mcp.tools.catalog_tools import (
     GetCatalogItemParams,
     ListCatalogCategoriesParams,
     ListCatalogItemsParams,
+    CreateCatalogCategoryParams,
+    UpdateCatalogCategoryParams,
+    MoveCatalogItemsParams,
 )
 from servicenow_mcp.tools.catalog_tools import (
     get_catalog_item as get_catalog_item_tool,
@@ -32,6 +36,15 @@ from servicenow_mcp.tools.catalog_tools import (
 )
 from servicenow_mcp.tools.catalog_tools import (
     list_catalog_items as list_catalog_items_tool,
+)
+from servicenow_mcp.tools.catalog_tools import (
+    create_catalog_category as create_catalog_category_tool,
+)
+from servicenow_mcp.tools.catalog_tools import (
+    update_catalog_category as update_catalog_category_tool,
+)
+from servicenow_mcp.tools.catalog_tools import (
+    move_catalog_items as move_catalog_items_tool,
 )
 from servicenow_mcp.tools.catalog_optimization import (
     OptimizationRecommendationsParams,
@@ -326,29 +339,59 @@ class ServiceNowMCP:
         # Register catalog tools
         @self.mcp_server.tool()
         def list_catalog_items(params: ListCatalogItemsParams) -> str:
-            """List service catalog items from ServiceNow"""
-            return list_catalog_items_tool(self.config, self.auth_manager, params)
-            
+            """List service catalog items."""
+            return json.dumps(
+                list_catalog_items_tool(self.config, self.auth_manager, params)
+            )
+
         @self.mcp_server.tool()
         def get_catalog_item(params: GetCatalogItemParams) -> str:
-            """Get a specific service catalog item from ServiceNow"""
-            return get_catalog_item_tool(self.config, self.auth_manager, params)
+            """Get a specific service catalog item."""
+            return json.dumps(
+                get_catalog_item_tool(self.config, self.auth_manager, params).dict()
+            )
             
         @self.mcp_server.tool()
         def list_catalog_categories(params: ListCatalogCategoriesParams) -> str:
-            """List service catalog categories from ServiceNow"""
-            return list_catalog_categories_tool(self.config, self.auth_manager, params)
-            
-        # Register catalog optimization tools
+            """List service catalog categories."""
+            return json.dumps(
+                list_catalog_categories_tool(self.config, self.auth_manager, params)
+            )
+
+        @self.mcp_server.tool()
+        def create_catalog_category(params: CreateCatalogCategoryParams) -> str:
+            """Create a new service catalog category."""
+            return json.dumps(
+                create_catalog_category_tool(self.config, self.auth_manager, params).dict()
+            )
+
+        @self.mcp_server.tool()
+        def update_catalog_category(params: UpdateCatalogCategoryParams) -> str:
+            """Update an existing service catalog category."""
+            return json.dumps(
+                update_catalog_category_tool(self.config, self.auth_manager, params).dict()
+            )
+
+        @self.mcp_server.tool()
+        def move_catalog_items(params: MoveCatalogItemsParams) -> str:
+            """Move catalog items to a different category."""
+            return json.dumps(
+                move_catalog_items_tool(self.config, self.auth_manager, params).dict()
+            )
+
         @self.mcp_server.tool()
         def get_optimization_recommendations(params: OptimizationRecommendationsParams) -> str:
-            """Get recommendations for optimizing the service catalog"""
-            return get_optimization_recommendations_tool(self.config, self.auth_manager, params)
+            """Get optimization recommendations for the service catalog."""
+            return json.dumps(
+                get_optimization_recommendations_tool(self.config, self.auth_manager, params)
+            )
             
         @self.mcp_server.tool()
         def update_catalog_item(params: UpdateCatalogItemParams) -> str:
-            """Update a service catalog item"""
-            return update_catalog_item_tool(self.config, self.auth_manager, params)
+            """Update a service catalog item."""
+            return json.dumps(
+                update_catalog_item_tool(self.config, self.auth_manager, params)
+            )
 
         # Register change management tools
         @self.mcp_server.tool()
