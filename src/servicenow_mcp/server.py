@@ -5,7 +5,7 @@ This module provides the main implementation of the ServiceNow MCP server.
 """
 
 import os
-from typing import Dict, Union
+from typing import Dict, Union, Any
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
@@ -18,6 +18,7 @@ from servicenow_mcp.resources.catalog import (
 )
 from servicenow_mcp.resources.incidents import IncidentListParams, IncidentResource
 from servicenow_mcp.resources.changesets import ChangesetListParams, ChangesetResource
+from servicenow_mcp.resources.script_includes import ScriptIncludeListParams, ScriptIncludeResource
 from servicenow_mcp.tools.catalog_tools import (
     GetCatalogItemParams,
     ListCatalogCategoriesParams,
@@ -179,6 +180,20 @@ from servicenow_mcp.tools.changeset_tools import (
     add_file_to_changeset as add_file_to_changeset_tool,
 )
 
+from servicenow_mcp.tools.script_include_tools import (
+    ListScriptIncludesParams,
+    GetScriptIncludeParams,
+    CreateScriptIncludeParams,
+    UpdateScriptIncludeParams,
+    DeleteScriptIncludeParams,
+    ScriptIncludeResponse,
+    list_script_includes as list_script_includes_tool,
+    get_script_include as get_script_include_tool,
+    create_script_include as create_script_include_tool,
+    update_script_include as update_script_include_tool,
+    delete_script_include as delete_script_include_tool,
+)
+
 
 class ServiceNowMCP:
     """
@@ -246,7 +261,7 @@ class ServiceNowMCP:
             
         @self.mcp_server.resource("catalog://{item_id}")
         async def get_catalog_item(item_id: str) -> str:
-            """Get a specific catalog item from ServiceNow by ID"""
+            """Get a specific catalog item from ServiceNow by ID or number"""
             return await catalog_resource.get_catalog_item(item_id)
 
         # Register changeset resources
@@ -263,6 +278,21 @@ class ServiceNowMCP:
         async def get_changeset(changeset_id: str) -> str:
             """Get a specific changeset from ServiceNow by ID"""
             return await changeset_resource.get_changeset(changeset_id)
+
+        # Register script include resources
+        script_include_resource = ScriptIncludeResource(self.config, self.auth_manager)
+        
+        @self.mcp_server.resource("scriptincludes://list")
+        async def list_script_includes() -> str:
+            """List script includes from ServiceNow"""
+            # Since there's no URI parameter, we pass an empty params object
+            script_includes = await script_include_resource.list_script_includes(ScriptIncludeListParams())
+            return script_includes
+            
+        @self.mcp_server.resource("scriptinclude://{script_include_id}")
+        async def get_script_include(script_include_id: str) -> str:
+            """Get a specific script include from ServiceNow by ID or name"""
+            return await script_include_resource.get_script_include(script_include_id)
 
     def _register_tools(self):
         """Register all ServiceNow tools with the MCP server."""
@@ -457,6 +487,32 @@ class ServiceNowMCP:
         def add_file_to_changeset(params: AddFileToChangesetParams) -> str:
             """Add a file to a changeset in ServiceNow"""
             return add_file_to_changeset_tool(self.config, self.auth_manager, params)
+
+        # Register script include tools
+        @self.mcp_server.tool()
+        def list_script_includes(params: ListScriptIncludesParams) -> Dict[str, Any]:
+            """List script includes from ServiceNow"""
+            return list_script_includes_tool(self.config, self.auth_manager, params)
+            
+        @self.mcp_server.tool()
+        def get_script_include(params: GetScriptIncludeParams) -> Dict[str, Any]:
+            """Get a specific script include from ServiceNow"""
+            return get_script_include_tool(self.config, self.auth_manager, params)
+            
+        @self.mcp_server.tool()
+        def create_script_include(params: CreateScriptIncludeParams) -> ScriptIncludeResponse:
+            """Create a new script include in ServiceNow"""
+            return create_script_include_tool(self.config, self.auth_manager, params)
+            
+        @self.mcp_server.tool()
+        def update_script_include(params: UpdateScriptIncludeParams) -> ScriptIncludeResponse:
+            """Update an existing script include in ServiceNow"""
+            return update_script_include_tool(self.config, self.auth_manager, params)
+            
+        @self.mcp_server.tool()
+        def delete_script_include(params: DeleteScriptIncludeParams) -> ScriptIncludeResponse:
+            """Delete a script include from ServiceNow"""
+            return delete_script_include_tool(self.config, self.auth_manager, params)
 
     def start(self):
         """Start the MCP server."""

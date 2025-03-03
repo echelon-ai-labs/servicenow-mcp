@@ -5,11 +5,12 @@ This module provides resources for accessing changesets in ServiceNow.
 """
 
 import logging
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import requests
 from pydantic import BaseModel, Field
 
+from mcp.server.fastmcp.resources import Resource
 from servicenow_mcp.auth.auth_manager import AuthManager
 from servicenow_mcp.utils.config import ServerConfig
 

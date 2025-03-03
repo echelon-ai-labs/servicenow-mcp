@@ -99,17 +99,18 @@ The ServiceNow MCP server provides the following tools:
 #### Workflow Management Tools
 
 1. **list_workflows** - List workflows from ServiceNow
-2. **get_workflow_details** - Get detailed information about a specific workflow
-3. **list_workflow_versions** - List all versions of a specific workflow
-4. **get_workflow_activities** - Get all activities in a workflow
-5. **create_workflow** - Create a new workflow in ServiceNow
-6. **update_workflow** - Update an existing workflow
-7. **activate_workflow** - Activate a workflow
-8. **deactivate_workflow** - Deactivate a workflow
-9. **add_workflow_activity** - Add a new activity to a workflow
-10. **update_workflow_activity** - Update an existing activity in a workflow
-11. **delete_workflow_activity** - Delete an activity from a workflow
-12. **reorder_workflow_activities** - Change the order of activities in a workflow
+2. **get_workflow** - Get a specific workflow from ServiceNow
+3. **create_workflow** - Create a new workflow in ServiceNow
+4. **update_workflow** - Update an existing workflow in ServiceNow
+5. **delete_workflow** - Delete a workflow from ServiceNow
+
+#### Script Include Management Tools
+
+1. **list_script_includes** - List script includes from ServiceNow
+2. **get_script_include** - Get a specific script include from ServiceNow
+3. **create_script_include** - Create a new script include in ServiceNow
+4. **update_script_include** - Update an existing script include in ServiceNow
+5. **delete_script_include** - Delete a script include from ServiceNow
 
 #### Changeset Management Tools
 
