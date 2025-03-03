@@ -79,6 +79,9 @@ The ServiceNow MCP server provides the following tools:
 1. **list_catalog_items** - List service catalog items from ServiceNow
 2. **get_catalog_item** - Get a specific service catalog item from ServiceNow
 3. **list_catalog_categories** - List service catalog categories from ServiceNow
+4. **create_catalog_category** - Create a new service catalog category in ServiceNow
+5. **update_catalog_category** - Update an existing service catalog category in ServiceNow
+6. **move_catalog_items** - Move catalog items between categories in ServiceNow
 
 #### Catalog Optimization Tools
 
@@ -178,6 +181,11 @@ Once the ServiceNow MCP server is configured with Claude Desktop, you can ask Cl
 - "Get details about the laptop request catalog item"
 - "Show me all catalog items in the Hardware category"
 - "Search for 'software' in the service catalog"
+- "Create a new category called 'Cloud Services' in the service catalog"
+- "Update the 'Hardware' category to rename it to 'IT Equipment'"
+- "Move the 'Virtual Machine' catalog item to the 'Cloud Services' category"
+- "Create a subcategory called 'Monitors' under the 'IT Equipment' category"
+- "Reorganize our catalog by moving all software items to the 'Software' category"
 
 #### Catalog Optimization Examples
 - "Analyze our service catalog and identify opportunities for improvement"

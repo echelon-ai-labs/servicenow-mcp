@@ -36,6 +36,75 @@ params = ListCatalogCategoriesParams(
 result = list_catalog_categories(config, auth_manager, params)
 ```
 
+### `create_catalog_category`
+
+Creates a new service catalog category.
+
+**Parameters:**
+- `title` (string, required): Title of the category
+- `description` (string, optional): Description of the category
+- `parent` (string, optional): Parent category sys_id
+- `icon` (string, optional): Icon for the category
+- `active` (boolean, default: true): Whether the category is active
+- `order` (integer, optional): Order of the category
+
+**Example:**
+```python
+from servicenow_mcp.tools.catalog_tools import CreateCatalogCategoryParams, create_catalog_category
+
+params = CreateCatalogCategoryParams(
+    title="Cloud Services",
+    description="Cloud-based services and resources",
+    parent="parent_category_id",
+    icon="cloud"
+)
+result = create_catalog_category(config, auth_manager, params)
+```
+
+### `update_catalog_category`
+
+Updates an existing service catalog category.
+
+**Parameters:**
+- `category_id` (string, required): Category ID or sys_id
+- `title` (string, optional): Title of the category
+- `description` (string, optional): Description of the category
+- `parent` (string, optional): Parent category sys_id
+- `icon` (string, optional): Icon for the category
+- `active` (boolean, optional): Whether the category is active
+- `order` (integer, optional): Order of the category
+
+**Example:**
+```python
+from servicenow_mcp.tools.catalog_tools import UpdateCatalogCategoryParams, update_catalog_category
+
+params = UpdateCatalogCategoryParams(
+    category_id="category123",
+    title="IT Equipment",
+    description="Updated description for IT equipment"
+)
+result = update_catalog_category(config, auth_manager, params)
+```
+
+### `move_catalog_items`
+
+Moves catalog items to a different category.
+
+**Parameters:**
+- `item_ids` (list of strings, required): List of catalog item IDs to move
+- `target_category_id` (string, required): Target category ID to move items to
+
+**Example:**
+```python
+from servicenow_mcp.tools.catalog_tools import MoveCatalogItemsParams, move_catalog_items
+
+params = MoveCatalogItemsParams(
+    item_ids=["item1", "item2", "item3"],
+    target_category_id="target_category_id"
+)
+result = move_catalog_items(config, auth_manager, params)
+```
+
 ### `list_catalog_items`
 
 Lists available service catalog items.
@@ -120,6 +189,11 @@ To use the ServiceNow Service Catalog with Claude Desktop:
 - "Can you list the catalog items in the Hardware category?"
 - "Can you show me the details of the 'New Laptop' catalog item?"
 - "Can you find catalog items related to 'software' in ServiceNow?"
+- "Can you create a new category called 'Cloud Services' in the service catalog?"
+- "Can you update the 'Hardware' category to rename it to 'IT Equipment'?"
+- "Can you move the 'Virtual Machine' catalog item to the 'Cloud Services' category?"
+- "Can you create a subcategory called 'Monitors' under the 'IT Equipment' category?"
+- "Can you reorganize our catalog by moving all software items to the 'Software' category?"
 
 ## Example Scripts
 
@@ -181,4 +255,4 @@ Represents a ServiceNow catalog item variable.
 - `mandatory` (boolean, optional): Whether the variable is mandatory
 - `default_value` (string, optional): Default value of the variable
 - `help_text` (string, optional): Help text for the variable
-- `order` (integer, optional): Order of the variable 
+- `order` (integer, optional): Order of the variable
