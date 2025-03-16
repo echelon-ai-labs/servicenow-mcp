@@ -5,7 +5,7 @@ This module provides tools for managing incidents in ServiceNow.
 """
 
 import logging
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 import requests
 from pydantic import BaseModel, Field
@@ -75,6 +75,12 @@ class ListIncidentsParams(BaseModel):
     assigned_to: Optional[str] = Field(None, description="Filter by assigned user")
     category: Optional[str] = Field(None, description="Filter by category")
     query: Optional[str] = Field(None, description="Search query for incidents")
+
+
+class GetIncidentParams(BaseModel):
+    """Parameters for getting an incident."""
+
+    incident_id: str = Field(..., description="Incident ID or sys_id to retrieve")
 
 
 class IncidentResponse(BaseModel):
@@ -606,4 +612,83 @@ def get_task(
         return {
             "success": False,
             "message": f"Failed to get task: {str(e)}",
+        }
+
+
+def get_incident(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: GetIncidentParams,
+) -> Dict[str, Any]:
+    """
+    Get an incident from ServiceNow by its ID or number.
+
+    Args:
+        config: Server configuration.
+        auth_manager: Authentication manager.
+        params: Parameters for getting the incident.
+
+    Returns:
+        Dictionary with incident details.
+    """
+    # Determine if incident_id is a number or sys_id
+    incident_id = params.incident_id
+    if len(incident_id) == 32 and all(c in "0123456789abcdef" for c in incident_id):
+        # This is likely a sys_id
+        query_params = {
+            "sysparm_query": f"sys_id={incident_id}",
+            "sysparm_limit": 1,
+        }
+    else:
+        # This is likely an incident number
+        query_params = {
+            "sysparm_query": f"number={incident_id}",
+            "sysparm_limit": 1,
+        }
+    
+    # Add fields to retrieve
+    query_params["sysparm_display_value"] = "true"
+    query_params["sysparm_exclude_reference_link"] = "true"
+    query_params["sysparm_fields"] = (
+        "sys_id,number,short_description,description,state,"
+        "category,subcategory,priority,impact,urgency,"
+        "assigned_to,assignment_group,caller_id,opened_at,"
+        "sys_updated_on,sys_created_on,work_notes,comments,"
+        "close_notes,close_code,active"
+    )
+    
+    api_url = f"{config.api_url}/table/incident"
+    
+    try:
+        response = requests.get(
+            api_url,
+            params=query_params,
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        response.raise_for_status()
+        
+        result = response.json().get("result", [])
+        if not result:
+            return {
+                "success": False,
+                "message": f"Incident {incident_id} not found",
+                "data": None,
+            }
+        
+        # Return the first (and should be only) incident
+        incident = result[0]
+        
+        return {
+            "success": True,
+            "message": "Incident retrieved successfully",
+            "data": incident,
+        }
+        
+    except requests.RequestException as e:
+        logger.error(f"Failed to get incident: {e}")
+        return {
+            "success": False,
+            "message": f"Failed to get incident: {str(e)}",
+            "data": None,
         }
