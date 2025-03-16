@@ -161,6 +161,28 @@ result = await mcp.use_tool("servicenow", "resolve_incident", {
 print(f"Incident resolved: {result.success}")
 ```
 
+### Get Incident
+
+Retrieves a specific incident from ServiceNow by ID or number.
+
+**Tool Name:** `get_incident`
+
+**Parameters:**
+- `incident_id` (string, required): Incident ID or sys_id to retrieve
+
+**Example:**
+```python
+result = await mcp.use_tool("servicenow", "get_incident", {
+    "incident_id": "INC0010001"
+})
+
+if result["success"]:
+    incident = result["data"]
+    print(f"Incident: {incident['number']}")
+    print(f"Description: {incident['short_description']}")
+    print(f"State: {incident['state']}")
+```
+
 ## State Values
 
 ServiceNow incident states are represented by numeric values:
@@ -197,4 +219,3 @@ SERVICENOW_INSTANCE_URL=https://your-instance.service-now.com
 SERVICENOW_USERNAME=your-username
 SERVICENOW_PASSWORD=your-password
 SERVICENOW_AUTH_TYPE=basic
-``` 

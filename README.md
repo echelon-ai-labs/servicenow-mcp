@@ -73,6 +73,16 @@ The ServiceNow MCP server provides the following tools:
 3. **add_comment** - Add a comment to an incident in ServiceNow
 4. **resolve_incident** - Resolve an incident in ServiceNow
 5. **list_incidents** - List incidents from ServiceNow
+6. **get_incident** - Get a specific incident from ServiceNow by ID or number
+
+#### Task Management Tools
+
+1. **create_task** - Create a new task in ServiceNow
+2. **update_task** - Update an existing task in ServiceNow
+3. **add_task_comment** - Add a comment to a task in ServiceNow
+4. **complete_task** - Complete a task in ServiceNow
+5. **list_tasks** - List tasks from ServiceNow with filtering options
+6. **get_task** - Get a specific task from ServiceNow by its number
 
 #### Service Catalog Tools
 
