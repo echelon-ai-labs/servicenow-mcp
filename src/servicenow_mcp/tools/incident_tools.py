@@ -86,6 +86,12 @@ class IncidentResponse(BaseModel):
     incident_number: Optional[str] = Field(None, description="Number of the affected incident")
 
 
+class GetTaskParams(BaseModel):
+    """Parameters for getting a task by number."""
+
+    task_number: str = Field(..., description="Task number to retrieve")
+
+
 def create_incident(
     config: ServerConfig,
     auth_manager: AuthManager,
@@ -536,4 +542,68 @@ def list_incidents(
             "success": False,
             "message": f"Failed to list incidents: {str(e)}",
             "incidents": []
+        }
+
+
+def get_task(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: GetTaskParams,
+) -> dict:
+    """
+    Get a task from ServiceNow by its number.
+
+    Args:
+        config: Server configuration.
+        auth_manager: Authentication manager.
+        params: Parameters for getting the task.
+
+    Returns:
+        Dictionary with task details including short description, description, and priority.
+    """
+    api_url = f"{config.api_url}/table/task"
+    
+    # Build query parameters
+    query_params = {
+        "sysparm_query": f"number={params.task_number}",
+        "sysparm_limit": 1,
+        "sysparm_fields": "sys_id,number,short_description,description,priority",
+    }
+
+    # Make request
+    try:
+        response = requests.get(
+            api_url,
+            params=query_params,
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        response.raise_for_status()
+
+        result = response.json().get("result", [])
+        if not result:
+            return {
+                "success": False,
+                "message": f"Task not found: {params.task_number}",
+            }
+
+        task = result[0]
+
+        return {
+            "success": True,
+            "message": "Task retrieved successfully",
+            "task": {
+                "sys_id": task.get("sys_id"),
+                "number": task.get("number"),
+                "short_description": task.get("short_description"),
+                "description": task.get("description"),
+                "priority": task.get("priority"),
+            }
+        }
+
+    except requests.RequestException as e:
+        logger.error(f"Failed to get task: {e}")
+        return {
+            "success": False,
+            "message": f"Failed to get task: {str(e)}",
         }
