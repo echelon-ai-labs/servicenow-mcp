@@ -15,6 +15,7 @@ This project implements an MCP server that enables Claude to connect to ServiceN
 - Access and query the ServiceNow Service Catalog
 - Analyze and optimize the ServiceNow Service Catalog
 - Debug mode for troubleshooting
+- Support for both stdio and Server-Sent Events (SSE) communication
 
 ## Installation
 
@@ -48,7 +49,7 @@ This project implements an MCP server that enables Claude to connect to ServiceN
 
 ## Usage
 
-### Running the Server
+### Standard (stdio) Mode
 
 To start the MCP server:
 
@@ -60,6 +61,64 @@ Or with environment variables:
 
 ```
 SERVICENOW_INSTANCE_URL=https://your-instance.service-now.com SERVICENOW_USERNAME=your-username SERVICENOW_PASSWORD=your-password SERVICENOW_AUTH_TYPE=basic python -m servicenow_mcp.cli
+```
+
+### Server-Sent Events (SSE) Mode
+
+The ServiceNow MCP server can also run as a web server using Server-Sent Events (SSE) for communication, which allows for more flexible integration options.
+
+#### Starting the SSE Server
+
+You can start the SSE server using the provided CLI:
+
+```
+servicenow-mcp-sse --instance-url=https://your-instance.service-now.com --username=your-username --password=your-password
+```
+
+By default, the server will listen on `0.0.0.0:8080`. You can customize the host and port:
+
+```
+servicenow-mcp-sse --host=127.0.0.1 --port=8000
+```
+
+#### Connecting to the SSE Server
+
+The SSE server exposes two main endpoints:
+
+- `/sse` - The SSE connection endpoint
+- `/messages/` - The endpoint for sending messages to the server
+
+#### Example
+
+See the `examples/sse_server_example.py` file for a complete example of setting up and running the SSE server.
+
+```python
+from servicenow_mcp.server import ServiceNowMCP
+from servicenow_mcp.server_sse import create_starlette_app
+from servicenow_mcp.utils.config import ServerConfig, AuthConfig, AuthType, BasicAuthConfig
+import uvicorn
+
+# Create server configuration
+config = ServerConfig(
+    instance_url="https://your-instance.service-now.com",
+    auth=AuthConfig(
+        type=AuthType.BASIC,
+        config=BasicAuthConfig(
+            username="your-username",
+            password="your-password"
+        )
+    ),
+    debug=True,
+)
+
+# Create ServiceNow MCP server
+servicenow_mcp = ServiceNowMCP(config)
+
+# Create Starlette app with SSE transport
+app = create_starlette_app(servicenow_mcp, debug=True)
+
+# Start the web server
+uvicorn.run(app, host="0.0.0.0", port=8080)
 ```
 
 ### Available Tools
