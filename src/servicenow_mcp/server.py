@@ -250,6 +250,27 @@ from servicenow_mcp.tools.knowledge_base import (
     list_categories as list_categories_tool,
 )
 
+from servicenow_mcp.tools.user_tools import (
+    CreateUserParams,
+    UpdateUserParams,
+    GetUserParams,
+    ListUsersParams,
+    CreateGroupParams,
+    UpdateGroupParams,
+    AddGroupMembersParams,
+    RemoveGroupMembersParams,
+)
+from servicenow_mcp.tools.user_tools import (
+    create_user as create_user_tool,
+    update_user as update_user_tool,
+    get_user as get_user_tool,
+    list_users as list_users_tool,
+    create_group as create_group_tool,
+    update_group as update_group_tool,
+    add_group_members as add_group_members_tool,
+    remove_group_members as remove_group_members_tool,
+)
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -688,6 +709,71 @@ class ServiceNowMCP:
             except Exception as e:
                 logger.error("Error in list_categories: %s", str(e), exc_info=True)
                 return {"success": False, "message": f"Error: {str(e)}"}
+
+        # User management tools
+        @self.mcp_server.tool()
+        def create_user(params: CreateUserParams) -> Dict[str, Any]:
+            return create_user_tool(
+                self.config,
+                self.auth_manager,
+                params,
+            )
+            
+        @self.mcp_server.tool()
+        def update_user(params: UpdateUserParams) -> Dict[str, Any]:
+            return update_user_tool(
+                self.config,
+                self.auth_manager,
+                params,
+            )
+            
+        @self.mcp_server.tool()
+        def get_user(params: GetUserParams) -> Dict[str, Any]:
+            return get_user_tool(
+                self.config,
+                self.auth_manager,
+                params,
+            )
+            
+        @self.mcp_server.tool()
+        def list_users(params: ListUsersParams) -> Dict[str, Any]:
+            return list_users_tool(
+                self.config,
+                self.auth_manager,
+                params,
+            )
+            
+        @self.mcp_server.tool()
+        def create_group(params: CreateGroupParams) -> Dict[str, Any]:
+            return create_group_tool(
+                self.config,
+                self.auth_manager,
+                params,
+            )
+            
+        @self.mcp_server.tool()
+        def update_group(params: UpdateGroupParams) -> Dict[str, Any]:
+            return update_group_tool(
+                self.config,
+                self.auth_manager,
+                params,
+            )
+            
+        @self.mcp_server.tool()
+        def add_group_members(params: AddGroupMembersParams) -> Dict[str, Any]:
+            return add_group_members_tool(
+                self.config,
+                self.auth_manager,
+                params,
+            )
+            
+        @self.mcp_server.tool()
+        def remove_group_members(params: RemoveGroupMembersParams) -> Dict[str, Any]:
+            return remove_group_members_tool(
+                self.config,
+                self.auth_manager,
+                params,
+            )
 
     def start(self):
         """Start the MCP server."""

@@ -59,6 +59,16 @@ from servicenow_mcp.tools.script_include_tools import (
     list_script_includes,
     update_script_include,
 )
+from servicenow_mcp.tools.user_tools import (
+    create_user,
+    update_user,
+    get_user,
+    list_users,
+    create_group,
+    update_group,
+    add_group_members,
+    remove_group_members,
+)
 from servicenow_mcp.tools.workflow_tools import (
     activate_workflow,
     add_workflow_activity,
@@ -145,6 +155,16 @@ __all__ = [
     "publish_article",
     "list_articles",
     "get_article",
+    
+    # User management tools
+    "create_user",
+    "update_user",
+    "get_user",
+    "list_users",
+    "create_group",
+    "update_group",
+    "add_group_members",
+    "remove_group_members",
     
     # Future tools
     # "create_problem",

@@ -195,6 +195,17 @@ The ServiceNow MCP server provides the following tools:
 7. **list_articles** - List knowledge articles with filtering options
 8. **get_article** - Get a specific knowledge article by ID
 
+#### User Management Tools
+
+1. **create_user** - Create a new user in ServiceNow
+2. **update_user** - Update an existing user in ServiceNow
+3. **get_user** - Get a specific user by ID, username, or email
+4. **list_users** - List users with filtering options
+5. **create_group** - Create a new group in ServiceNow
+6. **update_group** - Update an existing group in ServiceNow
+7. **add_group_members** - Add members to a group in ServiceNow
+8. **remove_group_members** - Remove members from a group in ServiceNow
+
 ### Using the MCP CLI
 
 The ServiceNow MCP server can be installed with the MCP CLI, which provides a convenient way to register the server with Claude.
@@ -309,6 +320,18 @@ Once the ServiceNow MCP server is configured with Claude Desktop, you can ask Cl
 - "Show me the details of the VPN setup article"
 - "Find knowledge articles containing 'password reset' in the IT knowledge base"
 - "Create a subcategory called 'Wireless Networks' under the Network Troubleshooting category"
+
+#### User Management Examples
+- "Create a new user Dr. Alice Radiology in the Radiology department"
+- "Update Bob's user record to make him the manager of Alice"
+- "Assign the ITIL role to Bob so he can approve change requests"
+- "List all users in the Radiology department"
+- "Create a new group called 'Biomedical Engineering' for managing medical devices"
+- "Add an admin user to the Biomedical Engineering group as a member"
+- "Update the Biomedical Engineering group to change its manager"
+- "Remove a user from the Biomedical Engineering group"
+- "Find all active users in the system with 'doctor' in their title"
+- "Create a user that will act as an approver for the Radiology department"
 
 ### Example Scripts
 
