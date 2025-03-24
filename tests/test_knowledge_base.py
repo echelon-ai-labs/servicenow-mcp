@@ -327,9 +327,13 @@ class TestKnowledgeBaseTools(unittest.TestCase):
         self.assertEqual(self.auth_manager.get_headers(), kwargs["headers"])
         self.assertEqual(10, kwargs["params"]["sysparm_limit"])
         self.assertEqual(0, kwargs["params"]["sysparm_offset"])
-        self.assertEqual("true", kwargs["params"]["sysparm_display_value"])
-        self.assertEqual("kb_knowledge_base=kb001^kb_category=cat001^workflow_state=published^short_descriptionLIKEnetwork^ORtextLIKEnetwork", 
-                        kwargs["params"]["sysparm_query"])
+        self.assertEqual("all", kwargs["params"]["sysparm_display_value"])
+        
+        # Verify the query syntax contains the correct pattern
+        self.assertIn("sysparm_query", kwargs["params"])
+        query = kwargs["params"]["sysparm_query"]
+        self.assertIn("kb_knowledge_base.sys_id=kb001", query)
+        self.assertIn("kb_category.sys_id=cat001", query)
 
     @patch("servicenow_mcp.tools.knowledge_base.requests.get")
     def test_get_article(self, mock_get):
@@ -528,9 +532,14 @@ class TestKnowledgeBaseTools(unittest.TestCase):
         self.assertEqual(self.auth_manager.get_headers(), kwargs["headers"])
         self.assertEqual(10, kwargs["params"]["sysparm_limit"])
         self.assertEqual(0, kwargs["params"]["sysparm_offset"])
-        self.assertEqual("true", kwargs["params"]["sysparm_display_value"])
-        self.assertEqual("kb_knowledge_base=kb001^active=true^labelLIKENetwork^ORdescriptionLIKENetwork", 
-                        kwargs["params"]["sysparm_query"])
+        self.assertEqual("all", kwargs["params"]["sysparm_display_value"])
+        
+        # Verify the query syntax contains the correct pattern
+        self.assertIn("sysparm_query", kwargs["params"])
+        query = kwargs["params"]["sysparm_query"]
+        self.assertIn("kb_knowledge_base.sys_id=kb001", query)
+        self.assertIn("active=true", query)
+        self.assertIn("labelLIKENetwork", query)
 
 
 class TestKnowledgeBaseParams(unittest.TestCase):

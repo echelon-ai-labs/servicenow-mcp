@@ -350,6 +350,9 @@ def create_category(
         data["description"] = params.description
     if params.parent_category:
         data["parent"] = params.parent_category
+    
+    # Log the request data for debugging
+    logger.debug(f"Creating category with data: {data}")
 
     # Make request
     try:
@@ -362,7 +365,12 @@ def create_category(
         response.raise_for_status()
 
         result = response.json().get("result", {})
+        logger.debug(f"Category creation response: {result}")
 
+        # Log the specific fields to check the knowledge base assignment
+        if "kb_knowledge_base" in result:
+            logger.debug(f"Knowledge base in response: {result['kb_knowledge_base']}")
+        
         return CategoryResponse(
             success=True,
             message="Category created successfully",
@@ -574,22 +582,27 @@ def list_articles(
     query_params = {
         "sysparm_limit": params.limit,
         "sysparm_offset": params.offset,
-        "sysparm_display_value": "true",
+        "sysparm_display_value": "all",
     }
 
     # Build query string
     query_parts = []
     if params.knowledge_base:
-        query_parts.append(f"kb_knowledge_base={params.knowledge_base}")
+        query_parts.append(f"kb_knowledge_base.sys_id={params.knowledge_base}")
     if params.category:
-        query_parts.append(f"kb_category={params.category}")
+        query_parts.append(f"kb_category.sys_id={params.category}")
     if params.workflow_state:
         query_parts.append(f"workflow_state={params.workflow_state}")
     if params.query:
         query_parts.append(f"short_descriptionLIKE{params.query}^ORtextLIKE{params.query}")
 
     if query_parts:
-        query_params["sysparm_query"] = "^".join(query_parts)
+        query_string = "^".join(query_parts)
+        logger.debug(f"Constructed article query string: {query_string}")
+        query_params["sysparm_query"] = query_string
+    
+    # Log the query parameters for debugging
+    logger.debug(f"Listing articles with query params: {query_params}")
 
     # Make request
     try:
@@ -603,6 +616,7 @@ def list_articles(
 
         # Get the JSON response
         json_response = response.json()
+        logger.debug(f"Article listing raw response: {json_response}")
         
         # Safely extract the result
         if isinstance(json_response, dict) and "result" in json_response:
@@ -812,22 +826,28 @@ def list_categories(
     query_params = {
         "sysparm_limit": params.limit,
         "sysparm_offset": params.offset,
-        "sysparm_display_value": "true",
+        "sysparm_display_value": "all",
     }
 
     # Build query string
     query_parts = []
     if params.knowledge_base:
-        query_parts.append(f"kb_knowledge_base={params.knowledge_base}")
+        # Try different query format to ensure we match by sys_id value
+        query_parts.append(f"kb_knowledge_base.sys_id={params.knowledge_base}")
     if params.parent_category:
-        query_parts.append(f"parent={params.parent_category}")
+        query_parts.append(f"parent.sys_id={params.parent_category}")
     if params.active is not None:
         query_parts.append(f"active={str(params.active).lower()}")
     if params.query:
         query_parts.append(f"labelLIKE{params.query}^ORdescriptionLIKE{params.query}")
 
     if query_parts:
-        query_params["sysparm_query"] = "^".join(query_parts)
+        query_string = "^".join(query_parts)
+        logger.debug(f"Constructed query string: {query_string}")
+        query_params["sysparm_query"] = query_string
+    
+    # Log the query parameters for debugging
+    logger.debug(f"Listing categories with query params: {query_params}")
 
     # Make request
     try:
@@ -871,16 +891,41 @@ def list_categories(
                 title = category_item.get("label", "")
                 description = category_item.get("description", "")
                 
-                # Extract nested values safely
+                # Extract knowledge base - handle both dictionary and string cases
                 knowledge_base = ""
-                if isinstance(category_item.get("kb_knowledge_base"), dict):
-                    knowledge_base = category_item["kb_knowledge_base"].get("display_value", "")
+                kb_field = category_item.get("kb_knowledge_base")
+                if isinstance(kb_field, dict):
+                    knowledge_base = kb_field.get("display_value", "")
+                elif isinstance(kb_field, str):
+                    knowledge_base = kb_field
+                # Also check if kb_knowledge_base is missing but there's a separate value field
+                elif "kb_knowledge_base_value" in category_item:
+                    knowledge_base = category_item.get("kb_knowledge_base_value", "")
+                elif "kb_knowledge_base.display_value" in category_item:
+                    knowledge_base = category_item.get("kb_knowledge_base.display_value", "")
                 
+                # Extract parent category - handle both dictionary and string cases
                 parent = ""
-                if isinstance(category_item.get("parent"), dict):
-                    parent = category_item["parent"].get("display_value", "")
+                parent_field = category_item.get("parent")
+                if isinstance(parent_field, dict):
+                    parent = parent_field.get("display_value", "")
+                elif isinstance(parent_field, str):
+                    parent = parent_field
+                # Also check alternative field names
+                elif "parent_value" in category_item:
+                    parent = category_item.get("parent_value", "")
+                elif "parent.display_value" in category_item:
+                    parent = category_item.get("parent.display_value", "")
                 
-                active = category_item.get("active") == "true"
+                # Convert active to boolean - handle string or boolean types
+                active_field = category_item.get("active")
+                if isinstance(active_field, str):
+                    active = active_field.lower() == "true"
+                elif isinstance(active_field, bool):
+                    active = active_field
+                else:
+                    active = False
+                
                 created = category_item.get("sys_created_on", "")
                 updated = category_item.get("sys_updated_on", "")
                 
@@ -894,6 +939,9 @@ def list_categories(
                     "created": created,
                     "updated": updated,
                 })
+                
+                # Log for debugging purposes
+                logger.debug(f"Processed category: {title}, KB: {knowledge_base}, Parent: {parent}")
         else:
             logger.warning("Result is not a list: %s", result)
 
