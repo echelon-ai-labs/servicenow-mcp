@@ -1,0 +1,83 @@
+# Python project structure rules
+# This file defines the structure for a Python project with similar organization to the ServiceNow MCP project
+
+# Root directory structure
+root/
+  ├── src/                   # Source code directory
+  │   └── servicenow_mcp/    # Main package directory
+  │       ├── __init__.py    # Package initialization
+  │       ├── server.py      # Server implementation
+  │       ├── cli.py         # CLI implementation
+  │       ├── auth/          # Authentication related code
+  │       ├── tools/         # Tool implementations
+  │       ├── utils/         # Utility functions
+  │       └── resources/     # Resource definitions
+  ├── tests/                 # Test directory
+  │   ├── __init__.py
+  │   └── test_*.py         # Test files
+  ├── docs/                  # Documentation
+  ├── examples/              # Example code
+  ├── scripts/               # Utility scripts
+  ├── .env                   # Environment variables
+  ├── .gitignore            # Git ignore rules
+  ├── LICENSE               # License file
+  ├── README.md             # Project documentation
+  ├── pyproject.toml        # Project configuration
+  └── uv.lock              # Dependency lock file
+
+# File naming conventions
+*.py:
+  - Use snake_case for file names
+  - Test files should start with test_
+  - Main package files should be descriptive of their purpose
+
+# Directory naming conventions
+directories:
+  - Use snake_case for directory names
+  - Keep directory names lowercase
+  - Use plural form for directories containing multiple items
+
+# Import structure
+imports:
+  - Group imports in the following order:
+    1. Standard library imports
+    2. Third-party imports
+    3. Local application imports
+  - Use absolute imports for external packages
+  - Use relative imports for local modules
+
+# Testing conventions
+tests:
+  - Each test file should correspond to a module in the source code
+  - Test classes should be prefixed with Test
+  - Test methods should be prefixed with test_
+  - Use pytest fixtures for common setup
+
+# Documentation
+docs:
+  - Include docstrings for all public functions and classes
+  - Use Google style docstrings
+  - Keep README.md up to date with project information
+  - Document API endpoints and usage in docs/
+
+# Code style
+style:
+  - Follow PEP 8 guidelines
+  - Use type hints for function parameters and return values
+  - Keep functions focused and single-purpose
+  - Use meaningful variable and function names
+  - Add comments for complex logic
+
+# Version control
+git:
+  - Use meaningful commit messages
+  - Keep commits focused and atomic
+  - Include relevant issue numbers in commit messages
+  - Use feature branches for new development
+
+# Dependencies
+dependencies:
+  - Use pyproject.toml for project configuration
+  - Keep dependencies up to date
+  - Use uv.lock for deterministic builds
+  - Document all external dependencies in README.md 
