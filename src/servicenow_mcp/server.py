@@ -7,6 +7,7 @@ This module provides the main implementation of the ServiceNow MCP server.
 import os
 from typing import Dict, Union, Any
 import json
+import logging
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
@@ -207,6 +208,47 @@ from servicenow_mcp.tools.script_include_tools import (
     delete_script_include as delete_script_include_tool,
 )
 
+from servicenow_mcp.tools.knowledge_base import (
+    CreateKnowledgeBaseParams,
+    ListKnowledgeBasesParams,
+    CreateCategoryParams,
+    CreateArticleParams,
+    UpdateArticleParams,
+    PublishArticleParams,
+    ListArticlesParams,
+    GetArticleParams,
+    KnowledgeBaseResponse,
+    CategoryResponse,
+    ArticleResponse,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    create_knowledge_base as create_knowledge_base_tool,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    create_category as create_category_tool,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    create_article as create_article_tool,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    update_article as update_article_tool,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    publish_article as publish_article_tool,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    list_articles as list_articles_tool,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    get_article as get_article_tool,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    list_knowledge_bases as list_knowledge_bases_tool,
+)
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class ServiceNowMCP:
     """
@@ -553,9 +595,83 @@ class ServiceNowMCP:
             return update_script_include_tool(self.config, self.auth_manager, params)
             
         @self.mcp_server.tool()
-        def delete_script_include(params: DeleteScriptIncludeParams) -> ScriptIncludeResponse:
-            """Delete a script include from ServiceNow"""
-            return delete_script_include_tool(self.config, self.auth_manager, params)
+        def delete_script_include(params: DeleteScriptIncludeParams) -> str:
+            return json.dumps(delete_script_include_tool(self.config, self.auth_manager, params).dict())
+        
+        # Knowledge Base tools
+        @self.mcp_server.tool()
+        def create_knowledge_base(params: CreateKnowledgeBaseParams) -> str:
+            """Create a new knowledge base in ServiceNow"""
+            return json.dumps(
+                create_knowledge_base_tool(self.config, self.auth_manager, params).dict()
+            )
+        
+        @self.mcp_server.tool()
+        def list_knowledge_bases(params: ListKnowledgeBasesParams) -> Dict[str, Any]:
+            """List knowledge bases from ServiceNow"""
+            logger.info("list_knowledge_bases called with params: %s", params)
+            try:
+                result = list_knowledge_bases_tool(self.config, self.auth_manager, params)
+                logger.info("list_knowledge_bases_tool returned: %s", result)
+                
+                # Third approach - match script_include tools exactly by returning raw dictionary
+                logger.info("Using approach: Return raw dictionary (matching script_include tools)")
+                return result
+            except Exception as e:
+                logger.error("Error in list_knowledge_bases: %s", str(e), exc_info=True)
+                return {"success": False, "message": f"Error: {str(e)}"}
+        
+        @self.mcp_server.tool()
+        def create_category(params: CreateCategoryParams) -> str:
+            """Create a new category in a knowledge base"""
+            return json.dumps(
+                create_category_tool(self.config, self.auth_manager, params).dict()
+            )
+        
+        @self.mcp_server.tool()
+        def create_article(params: CreateArticleParams) -> str:
+            """Create a new knowledge article"""
+            return json.dumps(
+                create_article_tool(self.config, self.auth_manager, params).dict()
+            )
+        
+        @self.mcp_server.tool()
+        def update_article(params: UpdateArticleParams) -> str:
+            """Update an existing knowledge article"""
+            return json.dumps(
+                update_article_tool(self.config, self.auth_manager, params).dict()
+            )
+        
+        @self.mcp_server.tool()
+        def publish_article(params: PublishArticleParams) -> str:
+            """Publish a knowledge article"""
+            return json.dumps(
+                publish_article_tool(self.config, self.auth_manager, params).dict()
+            )
+        
+        @self.mcp_server.tool()
+        def list_articles(params: ListArticlesParams) -> Dict[str, Any]:
+            """List knowledge articles"""
+            logger.info("list_articles called with params: %s", params)
+            try:
+                result = list_articles_tool(self.config, self.auth_manager, params)
+                logger.info("list_articles_tool returned type: %s", type(result))
+                return result
+            except Exception as e:
+                logger.error("Error in list_articles: %s", str(e), exc_info=True)
+                return {"success": False, "message": f"Error: {str(e)}"}
+        
+        @self.mcp_server.tool()
+        def get_article(params: GetArticleParams) -> Dict[str, Any]:
+            """Get a specific knowledge article by ID"""
+            logger.info("get_article called with params: %s", params)
+            try:
+                result = get_article_tool(self.config, self.auth_manager, params)
+                logger.info("get_article_tool returned type: %s", type(result))
+                return result
+            except Exception as e:
+                logger.error("Error in get_article: %s", str(e), exc_info=True)
+                return {"success": False, "message": f"Error: {str(e)}"}
 
     def start(self):
         """Start the MCP server."""

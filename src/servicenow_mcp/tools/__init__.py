@@ -3,56 +3,76 @@ Tools module for the ServiceNow MCP server.
 """
 
 # Import tools as they are implemented
-from servicenow_mcp.tools.incident_tools import create_incident, update_incident, add_comment, resolve_incident, list_incidents
+from servicenow_mcp.tools.catalog_optimization import (
+    get_optimization_recommendations,
+    update_catalog_item,
+)
 from servicenow_mcp.tools.catalog_tools import (
-    list_catalog_items, 
-    get_catalog_item, 
-    list_catalog_categories,
     create_catalog_category,
+    get_catalog_item,
+    list_catalog_categories,
+    list_catalog_items,
+    move_catalog_items,
     update_catalog_category,
-    move_catalog_items
 )
-from servicenow_mcp.tools.catalog_optimization import get_optimization_recommendations, update_catalog_item
 from servicenow_mcp.tools.change_tools import (
-    create_change_request,
-    update_change_request,
-    list_change_requests,
-    get_change_request_details,
     add_change_task,
-    submit_change_for_approval,
     approve_change,
+    create_change_request,
+    get_change_request_details,
+    list_change_requests,
     reject_change,
-)
-from servicenow_mcp.tools.workflow_tools import (
-    list_workflows,
-    get_workflow_details,
-    list_workflow_versions,
-    get_workflow_activities,
-    create_workflow,
-    update_workflow,
-    activate_workflow,
-    deactivate_workflow,
-    add_workflow_activity,
-    update_workflow_activity,
-    delete_workflow_activity,
-    reorder_workflow_activities,
+    submit_change_for_approval,
+    update_change_request,
 )
 from servicenow_mcp.tools.changeset_tools import (
-    list_changesets,
-    get_changeset_details,
-    create_changeset,
-    update_changeset,
-    commit_changeset,
-    publish_changeset,
     add_file_to_changeset,
+    commit_changeset,
+    create_changeset,
+    get_changeset_details,
+    list_changesets,
+    publish_changeset,
+    update_changeset,
+)
+from servicenow_mcp.tools.incident_tools import (
+    add_comment,
+    create_incident,
+    list_incidents,
+    resolve_incident,
+    update_incident,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    create_article,
+    create_category,
+    create_knowledge_base,
+    get_article,
+    list_articles,
+    list_knowledge_bases,
+    publish_article,
+    update_article,
 )
 from servicenow_mcp.tools.script_include_tools import (
-    list_script_includes,
-    get_script_include,
     create_script_include,
-    update_script_include,
     delete_script_include,
+    get_script_include,
+    list_script_includes,
+    update_script_include,
 )
+from servicenow_mcp.tools.workflow_tools import (
+    activate_workflow,
+    add_workflow_activity,
+    create_workflow,
+    deactivate_workflow,
+    delete_workflow_activity,
+    get_workflow_activities,
+    get_workflow_details,
+    list_workflow_versions,
+    list_workflows,
+    reorder_workflow_activities,
+    update_workflow,
+    update_workflow_activity,
+)
+
 # from servicenow_mcp.tools.problem_tools import create_problem, update_problem
 # from servicenow_mcp.tools.request_tools import create_request, update_request
 
@@ -113,6 +133,16 @@ __all__ = [
     "create_script_include",
     "update_script_include",
     "delete_script_include",
+    
+    # Knowledge Base tools
+    "create_knowledge_base",
+    "list_knowledge_bases",
+    "create_category",
+    "create_article",
+    "update_article",
+    "publish_article",
+    "list_articles",
+    "get_article",
     
     # Future tools
     # "create_problem",

@@ -125,6 +125,17 @@ The ServiceNow MCP server provides the following tools:
 6. **publish_changeset** - Publish a changeset
 7. **add_file_to_changeset** - Add a file to a changeset
 
+#### Knowledge Base Management Tools
+
+1. **create_knowledge_base** - Create a new knowledge base in ServiceNow
+2. **list_knowledge_bases** - List knowledge bases with filtering options
+3. **create_category** - Create a new category in a knowledge base
+4. **create_article** - Create a new knowledge article in ServiceNow
+5. **update_article** - Update an existing knowledge article in ServiceNow
+6. **publish_article** - Publish a knowledge article in ServiceNow
+7. **list_articles** - List knowledge articles with filtering options
+8. **get_article** - Get a specific knowledge article by ID
+
 ### Using the MCP CLI
 
 The ServiceNow MCP server can be installed with the MCP CLI, which provides a convenient way to register the server with Claude.
@@ -227,6 +238,18 @@ Once the ServiceNow MCP server is configured with Claude Desktop, you can ask Cl
 - "Publish changeset 'sys_update_set_123' to production"
 - "Add a file to changeset 'sys_update_set_123'"
 - "Show me all changes in changeset 'sys_update_set_123'"
+
+#### Knowledge Base Examples
+- "Create a new knowledge base for the IT department"
+- "List all knowledge bases in the organization"
+- "Create a category called 'Network Troubleshooting' in the IT knowledge base"
+- "Write an article about VPN setup in the Network Troubleshooting category"
+- "Update the VPN setup article to include mobile device instructions"
+- "Publish the VPN setup article so it's visible to all users"
+- "List all articles in the Network Troubleshooting category"
+- "Show me the details of the VPN setup article"
+- "Find knowledge articles containing 'password reset' in the IT knowledge base"
+- "Create a subcategory called 'Wireless Networks' under the Network Troubleshooting category"
 
 ### Example Scripts
 
