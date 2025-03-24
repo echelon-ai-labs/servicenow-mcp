@@ -141,7 +141,7 @@ class TestKnowledgeBaseTools(unittest.TestCase):
         self.assertEqual("Test Category", kwargs["json"]["label"])
         self.assertEqual("Test Category Description", kwargs["json"]["description"])
         self.assertEqual("kb001", kwargs["json"]["kb_knowledge_base"])
-        self.assertEqual(True, kwargs["json"]["active"])
+        self.assertEqual("true", kwargs["json"]["active"])
 
     @patch("servicenow_mcp.tools.knowledge_base.requests.post")
     def test_create_article(self, mock_post):

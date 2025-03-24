@@ -343,7 +343,8 @@ def create_category(
     data = {
         "label": params.title,
         "kb_knowledge_base": params.knowledge_base,
-        "active": params.active,
+        # Convert boolean to string "true"/"false" as ServiceNow expects
+        "active": str(params.active).lower(),
     }
 
     if params.description:
@@ -370,6 +371,10 @@ def create_category(
         # Log the specific fields to check the knowledge base assignment
         if "kb_knowledge_base" in result:
             logger.debug(f"Knowledge base in response: {result['kb_knowledge_base']}")
+        
+        # Log the active status
+        if "active" in result:
+            logger.debug(f"Active status in response: {result['active']}")
         
         return CategoryResponse(
             success=True,
