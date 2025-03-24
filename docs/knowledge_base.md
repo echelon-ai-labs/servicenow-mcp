@@ -38,6 +38,15 @@ The ServiceNow MCP Knowledge Base tools provide a way to create and manage knowl
      - `parent_category` (optional) - Parent category (if creating a subcategory)
      - `active` (optional, default: true) - Whether the category is active
 
+2. **list_categories** - List categories in a knowledge base
+   - Parameters:
+     - `knowledge_base` (optional) - Filter by knowledge base ID
+     - `parent_category` (optional) - Filter by parent category ID
+     - `limit` (optional, default: 10) - Maximum number of categories to return
+     - `offset` (optional, default: 0) - Offset for pagination
+     - `active` (optional) - Filter by active status
+     - `query` (optional) - Search query for categories
+
 ### Article Management
 
 1. **create_article** - Create a new knowledge article
@@ -172,6 +181,19 @@ article = response['article']
 print(f"Title: {article['title']}")
 print(f"Category: {article['category']}")
 print(f"Views: {article['views']}")
+```
+
+### Listing Categories
+
+```python
+response = list_categories({
+    "knowledge_base": "healthcare_kb",
+    "active": True,
+    "limit": 20
+})
+print(f"Found {response['count']} categories")
+for category in response['categories']:
+    print(f"- {category['title']}")
 ```
 
 ## ServiceNow API Endpoints

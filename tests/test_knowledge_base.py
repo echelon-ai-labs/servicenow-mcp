@@ -19,6 +19,10 @@ from servicenow_mcp.tools.knowledge_base import (
     ListKnowledgeBasesParams,
     PublishArticleParams,
     UpdateArticleParams,
+    ListCategoriesParams,
+    KnowledgeBaseResponse,
+    CategoryResponse,
+    ArticleResponse,
     create_article,
     create_category,
     create_knowledge_base,
@@ -27,6 +31,7 @@ from servicenow_mcp.tools.knowledge_base import (
     list_knowledge_bases,
     publish_article,
     update_article,
+    list_categories,
 )
 from servicenow_mcp.utils.config import AuthConfig, AuthType, BasicAuthConfig, ServerConfig
 
@@ -465,6 +470,67 @@ class TestKnowledgeBaseTools(unittest.TestCase):
         self.assertEqual(0, kwargs["params"]["sysparm_offset"])
         self.assertEqual("true", kwargs["params"]["sysparm_display_value"])
         self.assertEqual("active=true^titleLIKEIT^ORdescriptionLIKEIT", kwargs["params"]["sysparm_query"])
+
+    @patch("servicenow_mcp.tools.knowledge_base.requests.get")
+    def test_list_categories(self, mock_get):
+        """Test listing categories in a knowledge base."""
+        # Mock response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "result": [
+                {
+                    "sys_id": "cat001",
+                    "label": "Network Troubleshooting",
+                    "description": "Articles for network troubleshooting",
+                    "kb_knowledge_base": {"display_value": "IT Knowledge Base"},
+                    "parent": {"display_value": ""},
+                    "active": "true",
+                    "sys_created_on": "2023-01-01 00:00:00",
+                    "sys_updated_on": "2023-01-02 00:00:00",
+                },
+                {
+                    "sys_id": "cat002",
+                    "label": "Software Setup",
+                    "description": "Articles for software installation",
+                    "kb_knowledge_base": {"display_value": "IT Knowledge Base"},
+                    "parent": {"display_value": ""},
+                    "active": "true",
+                    "sys_created_on": "2023-01-03 00:00:00",
+                    "sys_updated_on": "2023-01-04 00:00:00",
+                }
+            ]
+        }
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+
+        # Call the method
+        params = ListCategoriesParams(
+            knowledge_base="kb001",
+            active=True,
+            query="Network"
+        )
+        result = list_categories(self.server_config, self.auth_manager, params)
+
+        # Verify the result
+        self.assertTrue(result["success"])
+        self.assertEqual(2, len(result["categories"]))
+        self.assertEqual("cat001", result["categories"][0]["id"])
+        self.assertEqual("Network Troubleshooting", result["categories"][0]["title"])
+        self.assertEqual("Articles for network troubleshooting", result["categories"][0]["description"])
+        self.assertEqual("IT Knowledge Base", result["categories"][0]["knowledge_base"])
+        self.assertEqual("", result["categories"][0]["parent_category"])
+        self.assertTrue(result["categories"][0]["active"])
+
+        # Verify the request
+        mock_get.assert_called_once()
+        args, kwargs = mock_get.call_args
+        self.assertEqual(f"{self.server_config.api_url}/table/kb_category", args[0])
+        self.assertEqual(self.auth_manager.get_headers(), kwargs["headers"])
+        self.assertEqual(10, kwargs["params"]["sysparm_limit"])
+        self.assertEqual(0, kwargs["params"]["sysparm_offset"])
+        self.assertEqual("true", kwargs["params"]["sysparm_display_value"])
+        self.assertEqual("kb_knowledge_base=kb001^active=true^labelLIKENetwork^ORdescriptionLIKENetwork", 
+                        kwargs["params"]["sysparm_query"])
 
 
 class TestKnowledgeBaseParams(unittest.TestCase):

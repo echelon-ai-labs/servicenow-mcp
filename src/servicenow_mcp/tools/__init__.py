@@ -50,6 +50,7 @@ from servicenow_mcp.tools.knowledge_base import (
     list_knowledge_bases,
     publish_article,
     update_article,
+    list_categories,
 )
 from servicenow_mcp.tools.script_include_tools import (
     create_script_include,
@@ -138,6 +139,7 @@ __all__ = [
     "create_knowledge_base",
     "list_knowledge_bases",
     "create_category",
+    "list_categories",
     "create_article",
     "update_article",
     "publish_article",

@@ -212,6 +212,7 @@ from servicenow_mcp.tools.knowledge_base import (
     CreateKnowledgeBaseParams,
     ListKnowledgeBasesParams,
     CreateCategoryParams,
+    ListCategoriesParams,
     CreateArticleParams,
     UpdateArticleParams,
     PublishArticleParams,
@@ -244,6 +245,9 @@ from servicenow_mcp.tools.knowledge_base import (
 )
 from servicenow_mcp.tools.knowledge_base import (
     list_knowledge_bases as list_knowledge_bases_tool,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    list_categories as list_categories_tool,
 )
 
 # Set up logging
@@ -671,6 +675,18 @@ class ServiceNowMCP:
                 return result
             except Exception as e:
                 logger.error("Error in get_article: %s", str(e), exc_info=True)
+                return {"success": False, "message": f"Error: {str(e)}"}
+
+        @self.mcp_server.tool()
+        def list_categories(params: ListCategoriesParams) -> Dict[str, Any]:
+            """List categories in a knowledge base"""
+            logger.info("list_categories called with params: %s", params)
+            try:
+                result = list_categories_tool(self.config, self.auth_manager, params)
+                logger.info("list_categories_tool returned type: %s", type(result))
+                return result
+            except Exception as e:
+                logger.error("Error in list_categories: %s", str(e), exc_info=True)
                 return {"success": False, "message": f"Error: {str(e)}"}
 
     def start(self):

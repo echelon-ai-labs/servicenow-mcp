@@ -122,6 +122,17 @@ class ArticleResponse(BaseModel):
     workflow_state: Optional[str] = Field(None, description="Current workflow state of the article")
 
 
+class ListCategoriesParams(BaseModel):
+    """Parameters for listing categories in a knowledge base."""
+    
+    knowledge_base: Optional[str] = Field(None, description="Filter by knowledge base ID")
+    parent_category: Optional[str] = Field(None, description="Filter by parent category ID")
+    limit: int = Field(10, description="Maximum number of categories to return")
+    offset: int = Field(0, description="Offset for pagination")
+    active: Optional[bool] = Field(None, description="Filter by active status")
+    query: Optional[str] = Field(None, description="Search query for categories")
+
+
 def create_knowledge_base(
     config: ServerConfig,
     auth_manager: AuthManager,
@@ -238,7 +249,7 @@ def list_knowledge_bases(
             logger.error("Unexpected response format: %s", json_response)
             return {
                 "success": False,
-                "message": f"Unexpected response format",
+                "message": "Unexpected response format",
                 "knowledge_bases": [],
                 "count": 0,
                 "limit": params.limit,
@@ -713,7 +724,7 @@ def get_article(
             logger.error("Unexpected response format: %s", json_response)
             return {
                 "success": False,
-                "message": f"Unexpected response format",
+                "message": "Unexpected response format",
             }
 
         if not result or not isinstance(result, dict):
@@ -776,4 +787,132 @@ def get_article(
         return {
             "success": False,
             "message": f"Failed to get article: {str(e)}",
+        }
+
+
+def list_categories(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: ListCategoriesParams,
+) -> Dict[str, Any]:
+    """
+    List categories in a knowledge base.
+
+    Args:
+        config: Server configuration.
+        auth_manager: Authentication manager.
+        params: Parameters for listing categories.
+
+    Returns:
+        Dictionary with list of categories and metadata.
+    """
+    api_url = f"{config.api_url}/table/kb_category"
+
+    # Build query parameters
+    query_params = {
+        "sysparm_limit": params.limit,
+        "sysparm_offset": params.offset,
+        "sysparm_display_value": "true",
+    }
+
+    # Build query string
+    query_parts = []
+    if params.knowledge_base:
+        query_parts.append(f"kb_knowledge_base={params.knowledge_base}")
+    if params.parent_category:
+        query_parts.append(f"parent={params.parent_category}")
+    if params.active is not None:
+        query_parts.append(f"active={str(params.active).lower()}")
+    if params.query:
+        query_parts.append(f"labelLIKE{params.query}^ORdescriptionLIKE{params.query}")
+
+    if query_parts:
+        query_params["sysparm_query"] = "^".join(query_parts)
+
+    # Make request
+    try:
+        response = requests.get(
+            api_url,
+            params=query_params,
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        response.raise_for_status()
+
+        # Get the JSON response
+        json_response = response.json()
+        
+        # Safely extract the result
+        if isinstance(json_response, dict) and "result" in json_response:
+            result = json_response.get("result", [])
+        else:
+            logger.error("Unexpected response format: %s", json_response)
+            return {
+                "success": False,
+                "message": "Unexpected response format",
+                "categories": [],
+                "count": 0,
+                "limit": params.limit,
+                "offset": params.offset,
+            }
+
+        # Transform the results
+        categories = []
+        
+        # Handle either string or list
+        if isinstance(result, list):
+            for category_item in result:
+                if not isinstance(category_item, dict):
+                    logger.warning("Skipping non-dictionary category item: %s", category_item)
+                    continue
+                    
+                # Safely extract values
+                category_id = category_item.get("sys_id", "")
+                title = category_item.get("label", "")
+                description = category_item.get("description", "")
+                
+                # Extract nested values safely
+                knowledge_base = ""
+                if isinstance(category_item.get("kb_knowledge_base"), dict):
+                    knowledge_base = category_item["kb_knowledge_base"].get("display_value", "")
+                
+                parent = ""
+                if isinstance(category_item.get("parent"), dict):
+                    parent = category_item["parent"].get("display_value", "")
+                
+                active = category_item.get("active") == "true"
+                created = category_item.get("sys_created_on", "")
+                updated = category_item.get("sys_updated_on", "")
+                
+                categories.append({
+                    "id": category_id,
+                    "title": title,
+                    "description": description,
+                    "knowledge_base": knowledge_base,
+                    "parent_category": parent,
+                    "active": active,
+                    "created": created,
+                    "updated": updated,
+                })
+        else:
+            logger.warning("Result is not a list: %s", result)
+
+        return {
+            "success": True,
+            "message": f"Found {len(categories)} categories",
+            "categories": categories,
+            "count": len(categories),
+            "limit": params.limit,
+            "offset": params.offset,
+        }
+
+    except requests.RequestException as e:
+        logger.error(f"Failed to list categories: {e}")
+        return {
+            "success": False,
+            "message": f"Failed to list categories: {str(e)}",
+            "categories": [],
+            "count": 0,
+            "limit": params.limit,
+            "offset": params.offset,
         } 
