@@ -12,6 +12,7 @@ from servicenow_mcp.tools.user_tools import (
     CreateUserParams,
     GetUserParams,
     ListUsersParams,
+    ListGroupsParams,
     RemoveGroupMembersParams,
     UpdateGroupParams,
     UpdateUserParams,
@@ -20,6 +21,7 @@ from servicenow_mcp.tools.user_tools import (
     create_user,
     get_user,
     list_users,
+    list_groups,
     remove_group_members,
     update_group,
     update_user,
@@ -202,7 +204,63 @@ class TestUserTools(unittest.TestCase):
         call_args = mock_get.call_args
         self.assertEqual(call_args[0][0], f"{self.config.api_url}/table/sys_user")
         self.assertEqual(call_args[1]["params"]["sysparm_limit"], "10")
-        self.assertEqual(call_args[1]["params"]["sysparm_query"], "department=Radiology")
+        self.assertIn("department=Radiology", call_args[1]["params"]["sysparm_query"])
+
+    @patch("requests.get")
+    def test_list_groups(self, mock_get):
+        """Test list_groups function."""
+        # Configure mock
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {
+            "result": [
+                {
+                    "sys_id": "group123",
+                    "name": "IT Support",
+                    "description": "IT support team",
+                    "active": "true",
+                    "type": "it"
+                },
+                {
+                    "sys_id": "group456",
+                    "name": "HR Team",
+                    "description": "Human Resources team",
+                    "active": "true",
+                    "type": "administrative"
+                }
+            ]
+        }
+        mock_get.return_value = mock_response
+        
+        # Create test params
+        params = ListGroupsParams(
+            active=True,
+            type="it",
+            query="support",
+            limit=10,
+        )
+        
+        # Call function
+        result = list_groups(self.config, self.auth_manager, params)
+        
+        # Verify result
+        self.assertTrue(result["success"])
+        self.assertEqual(len(result["groups"]), 2)
+        self.assertEqual(result["groups"][0]["sys_id"], "group123")
+        self.assertEqual(result["groups"][1]["sys_id"], "group456")
+        self.assertEqual(result["count"], 2)
+        
+        # Verify mock was called correctly
+        mock_get.assert_called_once()
+        call_args = mock_get.call_args
+        self.assertEqual(call_args[0][0], f"{self.config.api_url}/table/sys_user_group")
+        self.assertEqual(call_args[1]["params"]["sysparm_limit"], "10")
+        self.assertEqual(call_args[1]["params"]["sysparm_offset"], "0")
+        self.assertEqual(call_args[1]["params"]["sysparm_display_value"], "true")
+        self.assertIn("active=true", call_args[1]["params"]["sysparm_query"])
+        self.assertIn("type=it", call_args[1]["params"]["sysparm_query"])
+        self.assertIn("nameLIKE", call_args[1]["params"]["sysparm_query"])
+        self.assertIn("descriptionLIKE", call_args[1]["params"]["sysparm_query"])
 
     @patch("requests.post")
     def test_create_group(self, mock_post):

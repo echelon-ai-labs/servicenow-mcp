@@ -21,6 +21,7 @@ The User Management tools allow you to create, update, and manage users and grou
 6. **update_group** - Update an existing group in ServiceNow
 7. **add_group_members** - Add members to a group in ServiceNow
 8. **remove_group_members** - Remove members from a group in ServiceNow
+9. **list_groups** - List groups with filtering options
 
 ## Tool Details
 
@@ -239,6 +240,32 @@ Removes members from a group in ServiceNow.
 result = remove_group_members({
     "group_id": "group123",
     "members": ["alice.radiology"]
+})
+```
+
+### list_groups
+
+Lists groups from ServiceNow with filtering options.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| limit | integer | No | Maximum number of groups to return (default: 10) |
+| offset | integer | No | Offset for pagination (default: 0) |
+| active | boolean | No | Filter by active status |
+| type | string | No | Filter by group type |
+| query | string | No | Case-insensitive search term that matches against group name or description fields. Uses ServiceNow's LIKE operator for partial matching. |
+
+#### Example
+
+```python
+# List active IT-type groups
+result = list_groups({
+    "active": true,
+    "type": "it",
+    "query": "support",
+    "limit": 20
 })
 ```
 

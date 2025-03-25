@@ -273,6 +273,7 @@ from servicenow_mcp.tools.user_tools import (
     UpdateGroupParams,
     AddGroupMembersParams,
     RemoveGroupMembersParams,
+    ListGroupsParams,
 )
 from servicenow_mcp.tools.user_tools import (
     create_user as create_user_tool,
@@ -283,6 +284,7 @@ from servicenow_mcp.tools.user_tools import (
     update_group as update_group_tool,
     add_group_members as add_group_members_tool,
     remove_group_members as remove_group_members_tool,
+    list_groups as list_groups_tool,
 )
 
 # Set up logging
@@ -812,6 +814,15 @@ class ServiceNowMCP:
         @self.mcp_server.tool()
         def remove_group_members(params: RemoveGroupMembersParams) -> Dict[str, Any]:
             return remove_group_members_tool(
+                self.config,
+                self.auth_manager,
+                params,
+            )
+            
+        @self.mcp_server.tool()
+        def list_groups(params: ListGroupsParams) -> Dict[str, Any]:
+            """List groups from ServiceNow with optional filtering"""
+            return list_groups_tool(
                 self.config,
                 self.auth_manager,
                 params,

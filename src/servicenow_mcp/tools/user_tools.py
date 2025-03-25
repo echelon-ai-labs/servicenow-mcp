@@ -68,7 +68,7 @@ class ListUsersParams(BaseModel):
     offset: int = Field(0, description="Offset for pagination")
     active: Optional[bool] = Field(None, description="Filter by active status")
     department: Optional[str] = Field(None, description="Filter by department")
-    query: Optional[str] = Field(None, description="Search query for users")
+    query: Optional[str] = Field(None, description="Case-insensitive search term that matches against name, username, or email fields. Uses ServiceNow's LIKE operator for partial matching.")
 
 
 class CreateGroupParams(BaseModel):
@@ -109,6 +109,16 @@ class RemoveGroupMembersParams(BaseModel):
 
     group_id: str = Field(..., description="Group ID or sys_id")
     members: List[str] = Field(..., description="List of user sys_ids or usernames to remove as members")
+
+
+class ListGroupsParams(BaseModel):
+    """Parameters for listing groups."""
+    
+    limit: int = Field(10, description="Maximum number of groups to return")
+    offset: int = Field(0, description="Offset for pagination")
+    active: Optional[bool] = Field(None, description="Filter by active status")
+    query: Optional[str] = Field(None, description="Case-insensitive search term that matches against group name or description fields. Uses ServiceNow's LIKE operator for partial matching.")
+    type: Optional[str] = Field(None, description="Filter by group type")
 
 
 class UserResponse(BaseModel):
@@ -388,6 +398,65 @@ def list_users(
     except requests.RequestException as e:
         logger.error(f"Failed to list users: {e}")
         return {"success": False, "message": f"Failed to list users: {str(e)}"}
+
+
+def list_groups(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: ListGroupsParams,
+) -> dict:
+    """
+    List groups from ServiceNow.
+
+    Args:
+        config: Server configuration.
+        auth_manager: Authentication manager.
+        params: Parameters for listing groups.
+
+    Returns:
+        Dictionary containing list of groups.
+    """
+    api_url = f"{config.api_url}/table/sys_user_group"
+    query_params = {
+        "sysparm_limit": str(params.limit),
+        "sysparm_offset": str(params.offset),
+        "sysparm_display_value": "true",
+    }
+
+    # Build query
+    query_parts = []
+    if params.active is not None:
+        query_parts.append(f"active={str(params.active).lower()}")
+    if params.type:
+        query_parts.append(f"type={params.type}")
+    if params.query:
+        query_parts.append(f"^nameLIKE{params.query}^ORdescriptionLIKE{params.query}")
+
+    if query_parts:
+        query_params["sysparm_query"] = "^".join(query_parts)
+
+    # Make request
+    try:
+        response = requests.get(
+            api_url,
+            params=query_params,
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        response.raise_for_status()
+
+        result = response.json().get("result", [])
+        
+        return {
+            "success": True,
+            "message": f"Found {len(result)} groups",
+            "groups": result,
+            "count": len(result),
+        }
+
+    except requests.RequestException as e:
+        logger.error(f"Failed to list groups: {e}")
+        return {"success": False, "message": f"Failed to list groups: {str(e)}"}
 
 
 def assign_roles_to_user(

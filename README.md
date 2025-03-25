@@ -208,6 +208,7 @@ The ServiceNow MCP server provides the following tools:
 6. **update_group** - Update an existing group in ServiceNow
 7. **add_group_members** - Add members to a group in ServiceNow
 8. **remove_group_members** - Remove members from a group in ServiceNow
+9. **list_groups** - List groups with filtering options
 
 ### Using the MCP CLI
 
@@ -340,6 +341,7 @@ Once the ServiceNow MCP server is configured with Claude Desktop, you can ask Cl
 - "Remove a user from the Biomedical Engineering group"
 - "Find all active users in the system with 'doctor' in their title"
 - "Create a user that will act as an approver for the Radiology department"
+- "List all IT support groups in the system"
 
 ### Example Scripts
 

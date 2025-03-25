@@ -73,6 +73,7 @@ from servicenow_mcp.tools.user_tools import (
     update_group,
     add_group_members,
     remove_group_members,
+    list_groups,
 )
 from servicenow_mcp.tools.workflow_tools import (
     activate_workflow,
@@ -173,6 +174,7 @@ __all__ = [
     "update_group",
     "add_group_members",
     "remove_group_members",
+    "list_groups",
     
     # Future tools
     # "create_problem",
