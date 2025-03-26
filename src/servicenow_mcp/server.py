@@ -384,256 +384,256 @@ class ServiceNowMCP:
             return get_incident_tool(self.config, self.auth_manager, params)
 
         # Register task tools
-        @self.mcp_server.tool()
-        def create_task(params: CreateTaskParams) -> str:
-            """Create a new task in ServiceNow"""
-            return create_task_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def create_task(params: CreateTaskParams) -> str:
+        #     """Create a new task in ServiceNow"""
+        #     return create_task_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def update_task(params: UpdateTaskParams) -> str:
-            """Update an existing task in ServiceNow"""
-            return update_task_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def update_task(params: UpdateTaskParams) -> str:
+        #     """Update an existing task in ServiceNow"""
+        #     return update_task_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def add_task_comment(params: AddTaskCommentParams) -> str:
-            """Add a comment to a task in ServiceNow"""
-            return add_task_comment_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def add_task_comment(params: AddTaskCommentParams) -> str:
+        #     """Add a comment to a task in ServiceNow"""
+        #     return add_task_comment_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def complete_task(params: CompleteTaskParams) -> str:
-            """Complete a task in ServiceNow"""
-            return complete_task_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def complete_task(params: CompleteTaskParams) -> str:
+        #     """Complete a task in ServiceNow"""
+        #     return complete_task_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def list_tasks(params: ListTasksParams) -> str:
-            """List tasks from ServiceNow"""
-            return list_tasks_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def list_tasks(params: ListTasksParams) -> str:
+        #     """List tasks from ServiceNow"""
+        #     return list_tasks_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def get_task(params: GetTaskParams) -> str:
-            """Get a task from ServiceNow by its number"""
-            return get_task_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def get_task(params: GetTaskParams) -> str:
+        #     """Get a task from ServiceNow by its number"""
+        #     return get_task_tool(self.config, self.auth_manager, params)
 
         # Register catalog tools
-        @self.mcp_server.tool()
-        def list_catalog_items(params: ListCatalogItemsParams) -> str:
-            """List service catalog items."""
-            return json.dumps(
-                list_catalog_items_tool(self.config, self.auth_manager, params)
-            )
+        # @self.mcp_server.tool()
+        # def list_catalog_items(params: ListCatalogItemsParams) -> str:
+        #     """List service catalog items."""
+        #     return json.dumps(
+        #         list_catalog_items_tool(self.config, self.auth_manager, params)
+        #     )
 
-        @self.mcp_server.tool()
-        def get_catalog_item(params: GetCatalogItemParams) -> str:
-            """Get a specific service catalog item."""
-            return json.dumps(
-                get_catalog_item_tool(self.config, self.auth_manager, params).dict()
-            )
+        # @self.mcp_server.tool()
+        # def get_catalog_item(params: GetCatalogItemParams) -> str:
+        #     """Get a specific service catalog item."""
+        #     return json.dumps(
+        #         get_catalog_item_tool(self.config, self.auth_manager, params).dict()
+        #     )
             
-        @self.mcp_server.tool()
-        def list_catalog_categories(params: ListCatalogCategoriesParams) -> str:
-            """List service catalog categories."""
-            return json.dumps(
-                list_catalog_categories_tool(self.config, self.auth_manager, params)
-            )
+        # @self.mcp_server.tool()
+        # def list_catalog_categories(params: ListCatalogCategoriesParams) -> str:
+        #     """List service catalog categories."""
+        #     return json.dumps(
+        #         list_catalog_categories_tool(self.config, self.auth_manager, params)
+        #     )
 
-        @self.mcp_server.tool()
-        def create_catalog_category(params: CreateCatalogCategoryParams) -> str:
-            """Create a new service catalog category."""
-            return json.dumps(
-                create_catalog_category_tool(self.config, self.auth_manager, params).dict()
-            )
+        # @self.mcp_server.tool()
+        # def create_catalog_category(params: CreateCatalogCategoryParams) -> str:
+        #     """Create a new service catalog category."""
+        #     return json.dumps(
+        #         create_catalog_category_tool(self.config, self.auth_manager, params).dict()
+        #     )
 
-        @self.mcp_server.tool()
-        def update_catalog_category(params: UpdateCatalogCategoryParams) -> str:
-            """Update an existing service catalog category."""
-            return json.dumps(
-                update_catalog_category_tool(self.config, self.auth_manager, params).dict()
-            )
+        # @self.mcp_server.tool()
+        # def update_catalog_category(params: UpdateCatalogCategoryParams) -> str:
+        #     """Update an existing service catalog category."""
+        #     return json.dumps(
+        #         update_catalog_category_tool(self.config, self.auth_manager, params).dict()
+        #     )
 
-        @self.mcp_server.tool()
-        def move_catalog_items(params: MoveCatalogItemsParams) -> str:
-            """Move catalog items to a different category."""
-            return json.dumps(
-                move_catalog_items_tool(self.config, self.auth_manager, params).dict()
-            )
+        # @self.mcp_server.tool()
+        # def move_catalog_items(params: MoveCatalogItemsParams) -> str:
+        #     """Move catalog items to a different category."""
+        #     return json.dumps(
+        #         move_catalog_items_tool(self.config, self.auth_manager, params).dict()
+        #     )
 
-        @self.mcp_server.tool()
-        def get_optimization_recommendations(params: OptimizationRecommendationsParams) -> str:
-            """Get optimization recommendations for the service catalog."""
-            return json.dumps(
-                get_optimization_recommendations_tool(self.config, self.auth_manager, params)
-            )
+        # @self.mcp_server.tool()
+        # def get_optimization_recommendations(params: OptimizationRecommendationsParams) -> str:
+        #     """Get optimization recommendations for the service catalog."""
+        #     return json.dumps(
+        #         get_optimization_recommendations_tool(self.config, self.auth_manager, params)
+        #     )
             
-        @self.mcp_server.tool()
-        def update_catalog_item(params: UpdateCatalogItemParams) -> str:
-            """Update a service catalog item."""
-            return json.dumps(
-                update_catalog_item_tool(self.config, self.auth_manager, params)
-            )
+        # @self.mcp_server.tool()
+        # def update_catalog_item(params: UpdateCatalogItemParams) -> str:
+        #     """Update a service catalog item."""
+        #     return json.dumps(
+        #         update_catalog_item_tool(self.config, self.auth_manager, params)
+        #     )
 
         # Register change management tools
-        @self.mcp_server.tool()
-        def create_change_request(params: CreateChangeRequestParams) -> str:
-            """Create a new change request in ServiceNow"""
-            return create_change_request_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def create_change_request(params: CreateChangeRequestParams) -> str:
+        #     """Create a new change request in ServiceNow"""
+        #     return create_change_request_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def update_change_request(params: UpdateChangeRequestParams) -> str:
-            """Update an existing change request in ServiceNow"""
-            return update_change_request_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def update_change_request(params: UpdateChangeRequestParams) -> str:
+        #     """Update an existing change request in ServiceNow"""
+        #     return update_change_request_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def list_change_requests(params: ListChangeRequestsParams) -> str:
-            """List change requests from ServiceNow"""
-            return list_change_requests_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def list_change_requests(params: ListChangeRequestsParams) -> str:
+        #     """List change requests from ServiceNow"""
+        #     return list_change_requests_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def get_change_request_details(params: GetChangeRequestDetailsParams) -> str:
-            """Get detailed information about a specific change request"""
-            return get_change_request_details_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def get_change_request_details(params: GetChangeRequestDetailsParams) -> str:
+        #     """Get detailed information about a specific change request"""
+        #     return get_change_request_details_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def add_change_task(params: AddChangeTaskParams) -> str:
-            """Add a task to a change request"""
-            return add_change_task_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def add_change_task(params: AddChangeTaskParams) -> str:
+        #     """Add a task to a change request"""
+        #     return add_change_task_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def submit_change_for_approval(params: SubmitChangeForApprovalParams) -> str:
-            """Submit a change request for approval"""
-            return submit_change_for_approval_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def submit_change_for_approval(params: SubmitChangeForApprovalParams) -> str:
+        #     """Submit a change request for approval"""
+        #     return submit_change_for_approval_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def approve_change(params: ApproveChangeParams) -> str:
-            """Approve a change request"""
-            return approve_change_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def approve_change(params: ApproveChangeParams) -> str:
+        #     """Approve a change request"""
+        #     return approve_change_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def reject_change(params: RejectChangeParams) -> str:
-            """Reject a change request"""
-            return reject_change_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def reject_change(params: RejectChangeParams) -> str:
+        #     """Reject a change request"""
+        #     return reject_change_tool(self.config, self.auth_manager, params)
 
         # Register workflow management tools
-        @self.mcp_server.tool()
-        def list_workflows(params: ListWorkflowsParams) -> str:
-            """List workflows from ServiceNow"""
-            return list_workflows_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def list_workflows(params: ListWorkflowsParams) -> str:
+        #     """List workflows from ServiceNow"""
+        #     return list_workflows_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def get_workflow_details(params: GetWorkflowDetailsParams) -> str:
-            """Get detailed information about a specific workflow"""
-            return get_workflow_details_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def get_workflow_details(params: GetWorkflowDetailsParams) -> str:
+        #     """Get detailed information about a specific workflow"""
+        #     return get_workflow_details_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def list_workflow_versions(params: ListWorkflowVersionsParams) -> str:
-            """List workflow versions from ServiceNow"""
-            return list_workflow_versions_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def list_workflow_versions(params: ListWorkflowVersionsParams) -> str:
+        #     """List workflow versions from ServiceNow"""
+        #     return list_workflow_versions_tool(self.config, self.auth_manager, params)
 
-        @self.mcp_server.tool()
-        def get_workflow_activities(params: GetWorkflowActivitiesParams) -> str:
-            """Get activities for a specific workflow"""
-            return get_workflow_activities_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def get_workflow_activities(params: GetWorkflowActivitiesParams) -> str:
+        #     """Get activities for a specific workflow"""
+        #     return get_workflow_activities_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def create_workflow(params: CreateWorkflowParams) -> str:
-            """Create a new workflow in ServiceNow"""
-            return create_workflow_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def create_workflow(params: CreateWorkflowParams) -> str:
+        #     """Create a new workflow in ServiceNow"""
+        #     return create_workflow_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def update_workflow(params: UpdateWorkflowParams) -> str:
-            """Update an existing workflow in ServiceNow"""
-            return update_workflow_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def update_workflow(params: UpdateWorkflowParams) -> str:
+        #     """Update an existing workflow in ServiceNow"""
+        #     return update_workflow_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def activate_workflow(params: ActivateWorkflowParams) -> str:
-            """Activate a workflow in ServiceNow"""
-            return activate_workflow_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def activate_workflow(params: ActivateWorkflowParams) -> str:
+        #     """Activate a workflow in ServiceNow"""
+        #     return activate_workflow_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def deactivate_workflow(params: DeactivateWorkflowParams) -> str:
-            """Deactivate a workflow in ServiceNow"""
-            return deactivate_workflow_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def deactivate_workflow(params: DeactivateWorkflowParams) -> str:
+        #     """Deactivate a workflow in ServiceNow"""
+        #     return deactivate_workflow_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def add_workflow_activity(params: AddWorkflowActivityParams) -> str:
-            """Add a new activity to a workflow in ServiceNow"""
-            return add_workflow_activity_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def add_workflow_activity(params: AddWorkflowActivityParams) -> str:
+        #     """Add a new activity to a workflow in ServiceNow"""
+        #     return add_workflow_activity_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def update_workflow_activity(params: UpdateWorkflowActivityParams) -> str:
-            """Update an existing activity in a workflow"""
-            return update_workflow_activity_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def update_workflow_activity(params: UpdateWorkflowActivityParams) -> str:
+        #     """Update an existing activity in a workflow"""
+        #     return update_workflow_activity_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def delete_workflow_activity(params: DeleteWorkflowActivityParams) -> str:
-            """Delete an activity from a workflow"""
-            return delete_workflow_activity_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def delete_workflow_activity(params: DeleteWorkflowActivityParams) -> str:
+        #     """Delete an activity from a workflow"""
+        #     return delete_workflow_activity_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def reorder_workflow_activities(params: ReorderWorkflowActivitiesParams) -> str:
-            """Reorder activities in a workflow"""
-            return reorder_workflow_activities_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def reorder_workflow_activities(params: ReorderWorkflowActivitiesParams) -> str:
+        #     """Reorder activities in a workflow"""
+        #     return reorder_workflow_activities_tool(self.config, self.auth_manager, params)
 
         # Register changeset management tools
-        @self.mcp_server.tool()
-        def list_changesets(params: ListChangesetsParams) -> str:
-            """List changesets from ServiceNow"""
-            return list_changesets_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def list_changesets(params: ListChangesetsParams) -> str:
+        #     """List changesets from ServiceNow"""
+        #     return list_changesets_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def get_changeset_details(params: GetChangesetDetailsParams) -> str:
-            """Get detailed information about a specific changeset"""
-            return get_changeset_details_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def get_changeset_details(params: GetChangesetDetailsParams) -> str:
+        #     """Get detailed information about a specific changeset"""
+        #     return get_changeset_details_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def create_changeset(params: CreateChangesetParams) -> str:
-            """Create a new changeset in ServiceNow"""
-            return create_changeset_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def create_changeset(params: CreateChangesetParams) -> str:
+        #     """Create a new changeset in ServiceNow"""
+        #     return create_changeset_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def update_changeset(params: UpdateChangesetParams) -> str:
-            """Update an existing changeset in ServiceNow"""
-            return update_changeset_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def update_changeset(params: UpdateChangesetParams) -> str:
+        #     """Update an existing changeset in ServiceNow"""
+        #     return update_changeset_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def commit_changeset(params: CommitChangesetParams) -> str:
-            """Commit a changeset in ServiceNow"""
-            return commit_changeset_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def commit_changeset(params: CommitChangesetParams) -> str:
+        #     """Commit a changeset in ServiceNow"""
+        #     return commit_changeset_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def publish_changeset(params: PublishChangesetParams) -> str:
-            """Publish a changeset in ServiceNow"""
-            return publish_changeset_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def publish_changeset(params: PublishChangesetParams) -> str:
+        #     """Publish a changeset in ServiceNow"""
+        #     return publish_changeset_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def add_file_to_changeset(params: AddFileToChangesetParams) -> str:
-            """Add a file to a changeset in ServiceNow"""
-            return add_file_to_changeset_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def add_file_to_changeset(params: AddFileToChangesetParams) -> str:
+        #     """Add a file to a changeset in ServiceNow"""
+        #     return add_file_to_changeset_tool(self.config, self.auth_manager, params)
 
         # Register script include tools
-        @self.mcp_server.tool()
-        def list_script_includes(params: ListScriptIncludesParams) -> Dict[str, Any]:
-            """List script includes from ServiceNow"""
-            return list_script_includes_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def list_script_includes(params: ListScriptIncludesParams) -> Dict[str, Any]:
+        #     """List script includes from ServiceNow"""
+        #     return list_script_includes_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def get_script_include(params: GetScriptIncludeParams) -> Dict[str, Any]:
-            """Get a specific script include from ServiceNow"""
-            return get_script_include_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def get_script_include(params: GetScriptIncludeParams) -> Dict[str, Any]:
+        #     """Get a specific script include from ServiceNow"""
+        #     return get_script_include_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def create_script_include(params: CreateScriptIncludeParams) -> ScriptIncludeResponse:
-            """Create a new script include in ServiceNow"""
-            return create_script_include_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def create_script_include(params: CreateScriptIncludeParams) -> ScriptIncludeResponse:
+        #     """Create a new script include in ServiceNow"""
+        #     return create_script_include_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def update_script_include(params: UpdateScriptIncludeParams) -> ScriptIncludeResponse:
-            """Update an existing script include in ServiceNow"""
-            return update_script_include_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def update_script_include(params: UpdateScriptIncludeParams) -> ScriptIncludeResponse:
+        #     """Update an existing script include in ServiceNow"""
+        #     return update_script_include_tool(self.config, self.auth_manager, params)
             
-        @self.mcp_server.tool()
-        def delete_script_include(params: DeleteScriptIncludeParams) -> ScriptIncludeResponse:
-            """Delete a script include from ServiceNow"""
-            return delete_script_include_tool(self.config, self.auth_manager, params)
+        # @self.mcp_server.tool()
+        # def delete_script_include(params: DeleteScriptIncludeParams) -> ScriptIncludeResponse:
+        #     """Delete a script include from ServiceNow"""
+        #     return delete_script_include_tool(self.config, self.auth_manager, params)
 
     def start(self):
         """Start the MCP server."""
