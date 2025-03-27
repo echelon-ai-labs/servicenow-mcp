@@ -291,6 +291,7 @@ from servicenow_mcp.tools.user_tools import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class ServiceNowMCP:
     """
     ServiceNow MCP Server implementation.
@@ -337,24 +338,24 @@ class ServiceNowMCP:
         def get_incident(incident_id: str) -> str:
             """Get a specific incident from ServiceNow by ID or number"""
             return incident_resource.get_incident(incident_id)
-            
+
         # Register catalog resources
         catalog_resource = CatalogResource(self.config, self.auth_manager)
-        
+
         @self.mcp_server.resource("catalog://items")
         async def list_catalog_items() -> str:
             """List catalog items from ServiceNow"""
             # Since there's no URI parameter, we pass an empty params object
             items = await catalog_resource.list_catalog_items(CatalogListParams())
             return items
-            
+
         @self.mcp_server.resource("catalog://categories")
         async def list_catalog_categories() -> str:
             """List catalog categories from ServiceNow"""
             # Since there's no URI parameter, we pass an empty params object
             categories = await catalog_resource.list_catalog_categories(CatalogCategoryListParams())
             return categories
-            
+
         @self.mcp_server.resource("catalog://{item_id}")
         async def get_catalog_item(item_id: str) -> str:
             """Get a specific catalog item from ServiceNow by ID or number"""
@@ -362,14 +363,14 @@ class ServiceNowMCP:
 
         # Register changeset resources
         changeset_resource = ChangesetResource(self.config, self.auth_manager)
-        
+
         @self.mcp_server.resource("changesets://list")
         async def list_changesets() -> str:
             """List changesets from ServiceNow"""
             # Since there's no URI parameter, we pass an empty params object
             changesets = await changeset_resource.list_changesets(ChangesetListParams())
             return changesets
-            
+
         @self.mcp_server.resource("changeset://{changeset_id}")
         async def get_changeset(changeset_id: str) -> str:
             """Get a specific changeset from ServiceNow by ID"""
@@ -377,14 +378,16 @@ class ServiceNowMCP:
 
         # Register script include resources
         script_include_resource = ScriptIncludeResource(self.config, self.auth_manager)
-        
+
         @self.mcp_server.resource("scriptincludes://list")
         async def list_script_includes() -> str:
             """List script includes from ServiceNow"""
             # Since there's no URI parameter, we pass an empty params object
-            script_includes = await script_include_resource.list_script_includes(ScriptIncludeListParams())
+            script_includes = await script_include_resource.list_script_includes(
+                ScriptIncludeListParams()
+            )
             return script_includes
-            
+
         @self.mcp_server.resource("scriptinclude://{script_include_id}")
         async def get_script_include(script_include_id: str) -> str:
             """Get a specific script include from ServiceNow by ID or name"""
@@ -418,28 +421,22 @@ class ServiceNowMCP:
         def list_incidents(params: ListIncidentsParams) -> str:
             """List incidents from ServiceNow"""
             return list_incidents_tool(self.config, self.auth_manager, params)
-            
+
         # Register catalog tools
         @self.mcp_server.tool()
         def list_catalog_items(params: ListCatalogItemsParams) -> str:
             """List service catalog items."""
-            return json.dumps(
-                list_catalog_items_tool(self.config, self.auth_manager, params)
-            )
+            return json.dumps(list_catalog_items_tool(self.config, self.auth_manager, params))
 
         @self.mcp_server.tool()
         def get_catalog_item(params: GetCatalogItemParams) -> str:
             """Get a specific service catalog item."""
-            return json.dumps(
-                get_catalog_item_tool(self.config, self.auth_manager, params).dict()
-            )
-            
+            return json.dumps(get_catalog_item_tool(self.config, self.auth_manager, params).dict())
+
         @self.mcp_server.tool()
         def list_catalog_categories(params: ListCatalogCategoriesParams) -> str:
             """List service catalog categories."""
-            return json.dumps(
-                list_catalog_categories_tool(self.config, self.auth_manager, params)
-            )
+            return json.dumps(list_catalog_categories_tool(self.config, self.auth_manager, params))
 
         @self.mcp_server.tool()
         def create_catalog_category(params: CreateCatalogCategoryParams) -> str:
@@ -468,7 +465,7 @@ class ServiceNowMCP:
             return json.dumps(
                 get_optimization_recommendations_tool(self.config, self.auth_manager, params)
             )
-            
+
         @self.mcp_server.tool()
         def update_catalog_item(params: UpdateCatalogItemParams) -> str:
             """Update a service catalog item."""
@@ -482,22 +479,25 @@ class ServiceNowMCP:
 
         @self.mcp_server.tool()
         def create_catalog_item_variable(params: CreateCatalogItemVariableParams) -> Dict[str, Any]:
+            """Create a new catalog item variable"""
             return create_catalog_item_variable_tool(
                 self.config,
                 self.auth_manager,
                 params,
             ).__dict__
-            
+
         @self.mcp_server.tool()
         def list_catalog_item_variables(params: ListCatalogItemVariablesParams) -> Dict[str, Any]:
+            """List catalog item variables"""
             return list_catalog_item_variables_tool(
                 self.config,
                 self.auth_manager,
                 params,
             ).__dict__
-            
+
         @self.mcp_server.tool()
         def update_catalog_item_variable(params: UpdateCatalogItemVariableParams) -> Dict[str, Any]:
+            """Update a catalog item variable"""
             return update_catalog_item_variable_tool(
                 self.config,
                 self.auth_manager,
@@ -565,42 +565,42 @@ class ServiceNowMCP:
         def get_workflow_activities(params: GetWorkflowActivitiesParams) -> str:
             """Get activities for a specific workflow"""
             return get_workflow_activities_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def create_workflow(params: CreateWorkflowParams) -> str:
             """Create a new workflow in ServiceNow"""
             return create_workflow_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def update_workflow(params: UpdateWorkflowParams) -> str:
             """Update an existing workflow in ServiceNow"""
             return update_workflow_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def activate_workflow(params: ActivateWorkflowParams) -> str:
             """Activate a workflow in ServiceNow"""
             return activate_workflow_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def deactivate_workflow(params: DeactivateWorkflowParams) -> str:
             """Deactivate a workflow in ServiceNow"""
             return deactivate_workflow_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def add_workflow_activity(params: AddWorkflowActivityParams) -> str:
             """Add a new activity to a workflow in ServiceNow"""
             return add_workflow_activity_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def update_workflow_activity(params: UpdateWorkflowActivityParams) -> str:
             """Update an existing activity in a workflow"""
             return update_workflow_activity_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def delete_workflow_activity(params: DeleteWorkflowActivityParams) -> str:
             """Delete an activity from a workflow"""
             return delete_workflow_activity_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def reorder_workflow_activities(params: ReorderWorkflowActivitiesParams) -> str:
             """Reorder activities in a workflow"""
@@ -611,32 +611,32 @@ class ServiceNowMCP:
         def list_changesets(params: ListChangesetsParams) -> str:
             """List changesets from ServiceNow"""
             return list_changesets_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def get_changeset_details(params: GetChangesetDetailsParams) -> str:
             """Get detailed information about a specific changeset"""
             return get_changeset_details_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def create_changeset(params: CreateChangesetParams) -> str:
             """Create a new changeset in ServiceNow"""
             return create_changeset_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def update_changeset(params: UpdateChangesetParams) -> str:
             """Update an existing changeset in ServiceNow"""
             return update_changeset_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def commit_changeset(params: CommitChangesetParams) -> str:
             """Commit a changeset in ServiceNow"""
             return commit_changeset_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def publish_changeset(params: PublishChangesetParams) -> str:
             """Publish a changeset in ServiceNow"""
             return publish_changeset_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def add_file_to_changeset(params: AddFileToChangesetParams) -> str:
             """Add a file to a changeset in ServiceNow"""
@@ -647,26 +647,29 @@ class ServiceNowMCP:
         def list_script_includes(params: ListScriptIncludesParams) -> Dict[str, Any]:
             """List script includes from ServiceNow"""
             return list_script_includes_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def get_script_include(params: GetScriptIncludeParams) -> Dict[str, Any]:
             """Get a specific script include from ServiceNow"""
             return get_script_include_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def create_script_include(params: CreateScriptIncludeParams) -> ScriptIncludeResponse:
             """Create a new script include in ServiceNow"""
             return create_script_include_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def update_script_include(params: UpdateScriptIncludeParams) -> ScriptIncludeResponse:
             """Update an existing script include in ServiceNow"""
             return update_script_include_tool(self.config, self.auth_manager, params)
-            
+
         @self.mcp_server.tool()
         def delete_script_include(params: DeleteScriptIncludeParams) -> str:
-            return json.dumps(delete_script_include_tool(self.config, self.auth_manager, params).dict())
-        
+            """Delete a script include in ServiceNow"""
+            return json.dumps(
+                delete_script_include_tool(self.config, self.auth_manager, params).dict()
+            )
+
         # Knowledge Base tools
         @self.mcp_server.tool()
         def create_knowledge_base(params: CreateKnowledgeBaseParams) -> str:
@@ -674,7 +677,7 @@ class ServiceNowMCP:
             return json.dumps(
                 create_knowledge_base_tool(self.config, self.auth_manager, params).dict()
             )
-        
+
         @self.mcp_server.tool()
         def list_knowledge_bases(params: ListKnowledgeBasesParams) -> Dict[str, Any]:
             """List knowledge bases from ServiceNow"""
@@ -682,42 +685,34 @@ class ServiceNowMCP:
             try:
                 result = list_knowledge_bases_tool(self.config, self.auth_manager, params)
                 logger.info("list_knowledge_bases_tool returned: %s", result)
-                
+
                 # Third approach - match script_include tools exactly by returning raw dictionary
                 logger.info("Using approach: Return raw dictionary (matching script_include tools)")
                 return result
             except Exception as e:
                 logger.error("Error in list_knowledge_bases: %s", str(e), exc_info=True)
                 return {"success": False, "message": f"Error: {str(e)}"}
-        
+
         @self.mcp_server.tool()
         def create_category(params: CreateCategoryParams) -> str:
             """Create a new category in a knowledge base"""
-            return json.dumps(
-                create_category_tool(self.config, self.auth_manager, params).dict()
-            )
-        
+            return json.dumps(create_category_tool(self.config, self.auth_manager, params).dict())
+
         @self.mcp_server.tool()
         def create_article(params: CreateArticleParams) -> str:
             """Create a new knowledge article"""
-            return json.dumps(
-                create_article_tool(self.config, self.auth_manager, params).dict()
-            )
-        
+            return json.dumps(create_article_tool(self.config, self.auth_manager, params).dict())
+
         @self.mcp_server.tool()
         def update_article(params: UpdateArticleParams) -> str:
             """Update an existing knowledge article"""
-            return json.dumps(
-                update_article_tool(self.config, self.auth_manager, params).dict()
-            )
-        
+            return json.dumps(update_article_tool(self.config, self.auth_manager, params).dict())
+
         @self.mcp_server.tool()
         def publish_article(params: PublishArticleParams) -> str:
             """Publish a knowledge article"""
-            return json.dumps(
-                publish_article_tool(self.config, self.auth_manager, params).dict()
-            )
-        
+            return json.dumps(publish_article_tool(self.config, self.auth_manager, params).dict())
+
         @self.mcp_server.tool()
         def list_articles(params: ListArticlesParams) -> Dict[str, Any]:
             """List knowledge articles"""
@@ -729,7 +724,7 @@ class ServiceNowMCP:
             except Exception as e:
                 logger.error("Error in list_articles: %s", str(e), exc_info=True)
                 return {"success": False, "message": f"Error: {str(e)}"}
-        
+
         @self.mcp_server.tool()
         def get_article(params: GetArticleParams) -> Dict[str, Any]:
             """Get a specific knowledge article by ID"""
@@ -757,68 +752,76 @@ class ServiceNowMCP:
         # User management tools
         @self.mcp_server.tool()
         def create_user(params: CreateUserParams) -> Dict[str, Any]:
+            """Create a new user in ServiceNow"""
             return create_user_tool(
                 self.config,
                 self.auth_manager,
                 params,
             )
-            
+
         @self.mcp_server.tool()
         def update_user(params: UpdateUserParams) -> Dict[str, Any]:
+            """Update an existing user in ServiceNow"""
             return update_user_tool(
                 self.config,
                 self.auth_manager,
                 params,
             )
-            
+
         @self.mcp_server.tool()
         def get_user(params: GetUserParams) -> Dict[str, Any]:
+            """Get a specific user in ServiceNow"""
             return get_user_tool(
                 self.config,
                 self.auth_manager,
                 params,
             )
-            
+
         @self.mcp_server.tool()
         def list_users(params: ListUsersParams) -> Dict[str, Any]:
+            """List users in ServiceNow"""
             return list_users_tool(
                 self.config,
                 self.auth_manager,
                 params,
             )
-            
+
         @self.mcp_server.tool()
         def create_group(params: CreateGroupParams) -> Dict[str, Any]:
+            """Create a new group in ServiceNow"""
             return create_group_tool(
                 self.config,
                 self.auth_manager,
                 params,
             )
-            
+
         @self.mcp_server.tool()
         def update_group(params: UpdateGroupParams) -> Dict[str, Any]:
+            """Update an existing group in ServiceNow"""
             return update_group_tool(
                 self.config,
                 self.auth_manager,
                 params,
             )
-            
+
         @self.mcp_server.tool()
         def add_group_members(params: AddGroupMembersParams) -> Dict[str, Any]:
+            """Add members to an existing group in ServiceNow"""
             return add_group_members_tool(
                 self.config,
                 self.auth_manager,
                 params,
             )
-            
+
         @self.mcp_server.tool()
         def remove_group_members(params: RemoveGroupMembersParams) -> Dict[str, Any]:
+            """Remove members from an existing group in ServiceNow"""
             return remove_group_members_tool(
                 self.config,
                 self.auth_manager,
                 params,
             )
-            
+
         @self.mcp_server.tool()
         def list_groups(params: ListGroupsParams) -> Dict[str, Any]:
             """List groups from ServiceNow with optional filtering"""
