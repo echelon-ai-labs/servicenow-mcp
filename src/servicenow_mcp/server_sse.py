@@ -63,6 +63,7 @@ class ServiceNowMCP(ServiceNowMCP):
         """
         super().__init__(config)
         self.mcp_server = FastMCP("ServiceNow", port=8080, host="localhost")
+        self._register_tools()
 
     def start(self, host: str = "0.0.0.0", port: int = 8080):
         """
