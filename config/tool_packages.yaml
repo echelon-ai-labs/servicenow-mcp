@@ -1,0 +1,218 @@
+# ServiceNow MCP Tool Packages Configuration
+# Define sets of tools to be exposed by the MCP server based on roles/workflows.
+# The MCP server loads tools based on the MCP_TOOL_PACKAGE environment variable.
+# If MCP_TOOL_PACKAGE is not set, 'full' is loaded.
+# If MCP_TOOL_PACKAGE is set to 'none', no tools are loaded (except list_tool_packages).
+
+# --- Package Definitions ---
+
+none: []
+
+service_desk:
+  # Incident Management
+  - create_incident
+  - update_incident
+  - add_comment
+  - resolve_incident
+  - list_incidents
+  # User Lookup
+  - get_user
+  - list_users
+  # Knowledge Lookup
+  - get_article
+  - list_articles
+
+catalog_builder:
+  # Core Catalog
+  - list_catalogs
+  - list_catalog_items
+  - get_catalog_item
+  - create_catalog_item
+  - update_catalog_item
+  # Categories
+  - list_catalog_categories
+  - create_catalog_category
+  - update_catalog_category
+  - move_catalog_items
+  # Variables
+  - create_catalog_item_variable
+  - list_catalog_item_variables
+  - update_catalog_item_variable
+  - delete_catalog_item_variable
+  - create_catalog_variable_choice
+  # Basic Scripting (UI Policy & User Criteria)
+  - create_ui_policy
+  - create_ui_policy_action
+  - create_user_criteria
+  - create_user_criteria_condition
+  # Optimization
+  - get_optimization_recommendations
+
+change_coordinator:
+  # Change Lifecycle
+  - create_change_request
+  - update_change_request
+  - list_change_requests
+  - get_change_request_details
+  # Tasks & Approval
+  - add_change_task
+  - submit_change_for_approval
+  - approve_change
+  - reject_change
+
+knowledge_author:
+  # KB Management
+  - create_knowledge_base
+  - list_knowledge_bases
+  # KB Categories
+  - create_category  # KB specific category tool
+  - list_categories  # KB specific category tool
+  # Article Lifecycle
+  - create_article
+  - update_article
+  - publish_article
+  - list_articles
+  - get_article
+
+platform_developer:
+  # Script Includes
+  - list_script_includes
+  - get_script_include
+  - create_script_include
+  - update_script_include
+  - delete_script_include
+  - execute_script_include
+  # Workflows
+  - list_workflows
+  - get_workflow_details
+  - create_workflow
+  - update_workflow
+  - activate_workflow
+  - deactivate_workflow
+  - list_workflow_versions
+  # Workflow Activities
+  - add_workflow_activity
+  - update_workflow_activity
+  - delete_workflow_activity
+  - reorder_workflow_activities
+  - get_workflow_activities
+  # General UI Policies
+  - create_ui_policy
+  - create_ui_policy_action
+  # Changesets
+  - list_changesets
+  - get_changeset_details
+  - create_changeset
+  - update_changeset
+  - commit_changeset
+  - publish_changeset
+  - add_file_to_changeset
+
+system_administrator:
+  # User Management
+  - create_user
+  - update_user
+  - get_user
+  - list_users
+  # Group Management
+  - create_group
+  - update_group
+  - list_groups
+  - add_group_members
+  - remove_group_members
+  # System Logs
+  - list_syslog_entries
+  - get_syslog_entry
+
+full:
+  # Incident Management
+  - create_incident
+  - update_incident
+  - add_comment
+  - resolve_incident
+  - list_incidents
+  # Catalog (Core)
+  - list_catalogs
+  - list_catalog_items
+  - get_catalog_item
+  - create_catalog_item
+  - update_catalog_item
+  # Catalog (Categories)
+  - list_catalog_categories
+  - create_catalog_category
+  - update_catalog_category
+  - move_catalog_items
+  # Catalog (Optimization)
+  - get_optimization_recommendations
+  # Catalog (Variables)
+  - create_catalog_item_variable
+  - list_catalog_item_variables
+  - update_catalog_item_variable
+  - delete_catalog_item_variable
+  - create_catalog_variable_choice
+  # Change Management
+  - create_change_request
+  - update_change_request
+  - list_change_requests
+  - get_change_request_details
+  - add_change_task
+  - submit_change_for_approval
+  - approve_change
+  - reject_change
+  # Workflow
+  - list_workflows
+  - get_workflow_details
+  - list_workflow_versions
+  - get_workflow_activities
+  - create_workflow
+  - update_workflow
+  - activate_workflow
+  - deactivate_workflow
+  - add_workflow_activity
+  - update_workflow_activity
+  - delete_workflow_activity
+  - reorder_workflow_activities
+  # Changeset
+  - list_changesets
+  - get_changeset_details
+  - create_changeset
+  - update_changeset
+  - commit_changeset
+  - publish_changeset
+  - add_file_to_changeset
+  # Script Include
+  - list_script_includes
+  - get_script_include
+  - create_script_include
+  - update_script_include
+  - delete_script_include
+  - execute_script_include
+  # Knowledge Base
+  - create_knowledge_base
+  - list_knowledge_bases
+  - create_category # KB specific
+  - list_categories # KB specific
+  - create_article
+  - update_article
+  - publish_article
+  - list_articles
+  - get_article
+  # User Management
+  - create_user
+  - update_user
+  - get_user
+  - list_users
+  - create_group
+  - update_group
+  - add_group_members
+  - remove_group_members
+  - list_groups
+  # Syslog
+  - list_syslog_entries
+  - get_syslog_entry
+  # Catalog Criteria
+  - create_user_criteria
+  - create_user_criteria_condition
+  # UI Policy
+  - create_ui_policy
+  - create_ui_policy_action

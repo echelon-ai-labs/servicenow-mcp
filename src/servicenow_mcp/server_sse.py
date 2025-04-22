@@ -46,7 +46,7 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
     )
 
 
-class ServiceNowMCP(ServiceNowMCP):
+class ServiceNowSSEMCP(ServiceNowMCP):
     """
     ServiceNow MCP Server implementation.
 
@@ -72,7 +72,7 @@ class ServiceNowMCP(ServiceNowMCP):
             port: Port to listen on
         """
         # Create Starlette app with SSE transport
-        starlette_app = create_starlette_app(self.mcp_server._mcp_server, debug=True)
+        starlette_app = create_starlette_app(self.mcp_server, debug=True)
 
         # Run using uvicorn
         uvicorn.run(starlette_app, host=host, port=port)
@@ -118,7 +118,7 @@ def create_servicenow_mcp(instance_url: str, username: str, password: str):
     config = ServerConfig(instance_url=instance_url, auth=auth_config)
 
     # Create and return server
-    return ServiceNowMCP(config)
+    return ServiceNowSSEMCP(config)
 
 
 def main():
