@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import requests
+from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
 from servicenow_mcp.utils.config import ServerConfig
@@ -19,16 +20,14 @@ from servicenow_mcp.utils.config import ServerConfig
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class OptimizationRecommendationsParams:
+class OptimizationRecommendationsParams(BaseModel):
     """Parameters for getting optimization recommendations."""
 
     recommendation_types: List[str]
     category_id: Optional[str] = None
 
 
-@dataclass
-class UpdateCatalogItemParams:
+class UpdateCatalogItemParams(BaseModel):
     """Parameters for updating a catalog item."""
 
     item_id: str
