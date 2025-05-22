@@ -287,6 +287,50 @@ from servicenow_mcp.tools.workflow_tools import (
 from servicenow_mcp.tools.workflow_tools import (
     update_workflow_activity as update_workflow_activity_tool,
 )
+from servicenow_mcp.tools.story_tools import (
+    CreateStoryParams,
+    UpdateStoryParams,
+    ListStoriesParams,
+    CreateStoryDependencyParams,
+    DeleteStoryDependencyParams,
+)
+from servicenow_mcp.tools.story_tools import (
+    create_story as create_story_tool,
+    update_story as update_story_tool,
+    list_stories as list_stories_tool,
+    create_story_dependency as create_story_dependency_tool,
+    delete_story_dependency as delete_story_dependency_tool,
+)
+from servicenow_mcp.tools.epic_tools import (
+    CreateEpicParams,
+    UpdateEpicParams,
+    ListEpicsParams,
+)
+from servicenow_mcp.tools.epic_tools import (
+    create_epic as create_epic_tool,
+    update_epic as update_epic_tool,
+    list_epics as list_epics_tool,
+)
+from servicenow_mcp.tools.scrum_task_tools import (
+    CreateScrumTaskParams,
+    UpdateScrumTaskParams,
+    ListScrumTasksParams,
+)
+from servicenow_mcp.tools.scrum_task_tools import (
+    create_scrum_task as create_scrum_task_tool,
+    update_scrum_task as update_scrum_task_tool,
+    list_scrum_tasks as list_scrum_tasks_tool,
+)
+from servicenow_mcp.tools.project_tools import (
+    CreateProjectParams,
+    UpdateProjectParams,
+    ListProjectsParams,
+)
+from servicenow_mcp.tools.project_tools import (
+    create_project as create_project_tool,
+    update_project as update_project_tool,
+    list_projects as list_projects_tool,
+)
 
 # Define a type alias for the Pydantic models or dataclasses used for params
 ParamsModel = Type[Any]  # Use Type[Any] for broader compatibility initially
@@ -786,6 +830,108 @@ def get_tool_definitions(
             Dict[str, Any],  # Expects dict
             "List groups from ServiceNow with optional filtering",
             "raw_dict",
+        ),
+        # Story Management Tools
+        "create_story": (
+            create_story_tool,
+            CreateStoryParams,
+            str,
+            "Create a new story in ServiceNow",
+            "str",
+        ),
+        "update_story": (
+            update_story_tool,
+            UpdateStoryParams,
+            str,
+            "Update an existing story in ServiceNow",
+            "str",
+        ),
+        "list_stories": (
+            list_stories_tool,
+            ListStoriesParams,
+            str,  # Expects JSON string
+            "List stories from ServiceNow",
+            "json",  # Tool returns list/dict
+        ),
+        "create_story_dependency": (
+            create_story_dependency_tool,
+            CreateStoryDependencyParams,
+            str,
+            "Create a dependency between two stories in ServiceNow",
+            "str",
+        ),
+        "delete_story_dependency": (
+            delete_story_dependency_tool,
+            DeleteStoryDependencyParams,
+            str,
+            "Delete a story dependency in ServiceNow",
+            "str",
+        ),
+        # Epic Management Tools
+        "create_epic": (
+            create_epic_tool,
+            CreateEpicParams,
+            str,
+            "Create a new epic in ServiceNow",
+            "str",
+        ),
+        "update_epic": (
+            update_epic_tool,
+            UpdateEpicParams,
+            str,
+            "Update an existing epic in ServiceNow",
+            "str",
+        ),
+        "list_epics": (
+            list_epics_tool,
+            ListEpicsParams,
+            str,  # Expects JSON string
+            "List epics from ServiceNow",
+            "json",  # Tool returns list/dict
+        ),
+        # Scrum Task Management Tools
+        "create_scrum_task": (
+            create_scrum_task_tool,
+            CreateScrumTaskParams,
+            str,
+            "Create a new scrum task in ServiceNow",
+            "str",
+        ),
+        "update_scrum_task": (
+            update_scrum_task_tool,
+            UpdateScrumTaskParams,
+            str,
+            "Update an existing scrum task in ServiceNow",
+            "str",
+        ),
+        "list_scrum_tasks": (
+            list_scrum_tasks_tool,
+            ListScrumTasksParams,
+            str,  # Expects JSON string
+            "List scrum tasks from ServiceNow",
+            "json",  # Tool returns list/dict
+        ),
+        # Project Management Tools
+        "create_project": (
+            create_project_tool,
+            CreateProjectParams,
+            str,
+            "Create a new project in ServiceNow",
+            "str",
+        ),
+        "update_project": (
+            update_project_tool,
+            UpdateProjectParams,
+            str,
+            "Update an existing project in ServiceNow",
+            "str",
+        ),
+        "list_projects": (
+            list_projects_tool,
+            ListProjectsParams,
+            str,  # Expects JSON string
+            "List projects from ServiceNow",
+            "json",  # Tool returns list/dict
         ),
     }
     return tool_definitions

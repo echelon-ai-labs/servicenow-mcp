@@ -89,7 +89,28 @@ from servicenow_mcp.tools.workflow_tools import (
     update_workflow,
     update_workflow_activity,
 )
-
+from servicenow_mcp.tools.story_tools import (
+    create_story,
+    update_story,
+    list_stories,
+    create_story_dependency,
+    delete_story_dependency,
+)
+from servicenow_mcp.tools.epic_tools import (
+    create_epic,
+    update_epic,
+    list_epics,
+)
+from servicenow_mcp.tools.scrum_task_tools import (
+    create_scrum_task,
+    update_scrum_task,
+    list_scrum_tasks,
+)
+from servicenow_mcp.tools.project_tools import (
+    create_project,
+    update_project,
+    list_projects,
+)
 # from servicenow_mcp.tools.problem_tools import create_problem, update_problem
 # from servicenow_mcp.tools.request_tools import create_request, update_request
 
@@ -175,6 +196,29 @@ __all__ = [
     "add_group_members",
     "remove_group_members",
     "list_groups",
+
+    # Story tools
+    "create_story",
+    "update_story",
+    "list_stories",
+    "create_story_dependency",
+    "delete_story_dependency",
+    
+    # Epic tools
+    "create_epic",
+    "update_epic",
+    "list_epics",
+
+    # Scrum Task tools
+    "create_scrum_task",
+    "update_scrum_task",
+    "list_scrum_tasks",
+
+    # Project tools
+    "create_project",
+    "update_project",
+    "list_projects",
+
     
     # Future tools
     # "create_problem",

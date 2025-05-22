@@ -156,6 +156,7 @@ The default `config/tool_packages.yaml` includes the following role-based packag
 -   `knowledge_author`: Tools for creating and managing knowledge bases, categories, and articles.
 -   `platform_developer`: Tools for server-side scripting (Script Includes), workflow development, and deployment (Changesets).
 -   `system_administrator`: Tools for user/group management and viewing system logs.
+-   `agile_management`: Tools for managing user stories, epics, scrum tasks, and projects.
 -   `full`: Includes all available tools (default).
 -   `none`: Includes no tools (except `list_tool_packages`).
 
@@ -203,6 +204,30 @@ The default `config/tool_packages.yaml` includes the following role-based packag
 6. **submit_change_for_approval** - Submit a change request for approval
 7. **approve_change** - Approve a change request
 8. **reject_change** - Reject a change request
+
+#### Agile Management Tools
+
+##### Story Management
+1. **create_story** - Create a new user story in ServiceNow
+2. **update_story** - Update an existing user story in ServiceNow
+3. **list_stories** - List user stories with filtering options
+4. **create_story_dependency** - Create a dependency between two stories
+5. **delete_story_dependency** - Delete a dependency between stories
+
+##### Epic Management
+1. **create_epic** - Create a new epic in ServiceNow
+2. **update_epic** - Update an existing epic in ServiceNow
+3. **list_epics** - List epics from ServiceNow with filtering options
+
+##### Scrum Task Management
+1. **create_scrum_task** - Create a new scrum task in ServiceNow
+2. **update_scrum_task** - Update an existing scrum task in ServiceNow
+3. **list_scrum_tasks** - List scrum tasks from ServiceNow with filtering options
+
+##### Project Management
+1. **create_project** - Create a new project in ServiceNow
+2. **update_project** - Update an existing project in ServiceNow
+3. **list_projects** - List projects from ServiceNow with filtering options
 
 #### Workflow Management Tools
 
@@ -348,6 +373,22 @@ Below are some example natural language queries you can use with Claude to inter
 - "List all changes assigned to the Network team"
 - "Create a normal change request to upgrade the production database server."
 - "Update change CHG0012345, set the state to 'Implement'."
+
+#### Agile Management Examples
+- "Create a new user story for implementing a new reporting dashboard"
+- "Update the 'Implement a new reporting dashboard' story to set it as blocked"
+- "List all user stories assigned to the Data Analytics team"
+- "Create a dependency between the 'Implement a new reporting dashboard' story and the 'Develop data extraction pipeline' story"
+- "Delete the dependency between the 'Implement a new reporting dashboard' story and the 'Develop data extraction pipeline' story"
+- "Create a new epic called 'Data Analytics Initiatives'"
+- "Update the 'Data Analytics Initiatives' epic to set it as completed"
+- "List all epics in the 'Data Analytics' project"
+- "Create a new scrum task for the 'Implement a new reporting dashboard' story"
+- "Update the 'Develop data extraction pipeline' scrum task to set it as completed"
+- "List all scrum tasks in the 'Implement a new reporting dashboard' story"
+- "Create a new project called 'Data Analytics Initiatives'"
+- "Update the 'Data Analytics Initiatives' project to set it as completed"
+- "List all projects in the 'Data Analytics' epic"
 
 #### Workflow Management Examples
 - "Show me all active workflows in ServiceNow"
