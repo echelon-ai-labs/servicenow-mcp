@@ -27,8 +27,8 @@ class CreateEpicParams(BaseModel):
     priority: Optional[str] = Field(None, description="Priority of epic (1 is Critical, 2 is High, 3 is Moderate, 4 is Low, 5 is Planning)")
     state: Optional[str] = Field(None, description="State of story (-6 is Draft,1 is Ready,2 is Work in progress, 3 is Complete, 4 is Cancelled)")
     assignment_group: Optional[str] = Field(None, description="Group assigned to the epic")
-    epic_points: Optional[int] = Field(10, description="Points value for the epic")
     assigned_to: Optional[str] = Field(None, description="User assigned to the epic")
+    work_notes: Optional[str] = Field(None, description="Work notes to add to the epic. Used for adding notes and comments to an epic")
     
 class UpdateEpicParams(BaseModel):
     """Parameters for updating an epic."""
@@ -40,7 +40,7 @@ class UpdateEpicParams(BaseModel):
     state: Optional[str] = Field(None, description="State of story (-6 is Draft,1 is Ready,2 is Work in progress, 3 is Complete, 4 is Cancelled)")
     assignment_group: Optional[str] = Field(None, description="Group assigned to the epic")
     assigned_to: Optional[str] = Field(None, description="User assigned to the epic")
-    work_notes: Optional[str] = Field(None, description="Work notes to add to the epic")
+    work_notes: Optional[str] = Field(None, description="Work notes to add to the epic. Used for adding notes and comments to an epic")
 
 class ListEpicsParams(BaseModel):
     """Parameters for listing epics."""
@@ -195,8 +195,6 @@ def create_epic(
         data["priority"] = validated_params.priority
     if validated_params.assignment_group:
         data["assignment_group"] = validated_params.assignment_group
-    if validated_params.epic_points:
-        data["epic_points"] = validated_params.epic_points
     if validated_params.assigned_to:
         data["assigned_to"] = validated_params.assigned_to
     if validated_params.work_notes:
@@ -282,10 +280,10 @@ def update_epic(
         data["priority"] = validated_params.priority
     if validated_params.assignment_group:
         data["assignment_group"] = validated_params.assignment_group
-    if validated_params.epic_points:
-        data["epic_points"] = validated_params.epic_points
     if validated_params.assigned_to:
         data["assigned_to"] = validated_params.assigned_to
+    if validated_params.work_notes:
+        data["work_notes"] = validated_params.work_notes
     
     # Get the instance URL
     instance_url = _get_instance_url(auth_manager, server_config)
