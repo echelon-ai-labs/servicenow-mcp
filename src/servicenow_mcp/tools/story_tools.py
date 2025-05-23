@@ -31,12 +31,12 @@ class CreateStoryParams(BaseModel):
     assigned_to: Optional[str] = Field(None, description="User assigned to the story")
     epic: Optional[str] = Field(None, description="Epic that the story belongs to. It requires the System ID of the epic.")
     project: Optional[str] = Field(None, description="Project that the story belongs to. It requires the System ID of the project.")
-    work_notes: Optional[str] = Field(None, description="Work notes to add to the story")
+    work_notes: Optional[str] = Field(None, description="Work notes to add to the story. Used for adding notes and comments to a story")
     
 class UpdateStoryParams(BaseModel):
     """Parameters for updating a story."""
 
-    story_id: str = Field(..., description="Story ID or sys_id")
+    story_id: str = Field(..., description="Story IDNumber or sys_id. You will need to fetch the story to get the sys_id if you only have the story number")
     short_description: Optional[str] = Field(None, description="Short description of the story")
     acceptance_criteria: Optional[str] = Field(None, description="Acceptance criteria for the story")
     description: Optional[str] = Field(None, description="Detailed description of the story")
@@ -46,7 +46,7 @@ class UpdateStoryParams(BaseModel):
     assigned_to: Optional[str] = Field(None, description="User assigned to the story")
     epic: Optional[str] = Field(None, description="Epic that the story belongs to. It requires the System ID of the epic.")
     project: Optional[str] = Field(None, description="Project that the story belongs to. It requires the System ID of the project.")
-    work_notes: Optional[str] = Field(None, description="Work notes to add to the story")
+    work_notes: Optional[str] = Field(None, description="Work notes to add to the story. Used for adding notes and comments to a story")
 
 class ListStoriesParams(BaseModel):
     """Parameters for listing stories."""
