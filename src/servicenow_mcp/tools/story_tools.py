@@ -58,6 +58,15 @@ class ListStoriesParams(BaseModel):
     timeframe: Optional[str] = Field(None, description="Filter by timeframe (upcoming, in-progress, completed)")
     query: Optional[str] = Field(None, description="Additional query string")
 
+class ListStoryDependenciesParams(BaseModel):
+    """Parameters for listing story dependencies."""
+
+    limit: Optional[int] = Field(10, description="Maximum number of records to return")
+    offset: Optional[int] = Field(0, description="Offset to start from")
+    query: Optional[str] = Field(None, description="Additional query string")
+    dependent_story: Optional[str] = Field(None, description="Story ID or sys_id of the dependent story")
+    prerequisite_story: Optional[str] = Field(None, description="Story ID or sys_id that this story depends on")
+
 class CreateStoryDependencyParams(BaseModel):
     """Parameters for creating a story dependency."""
 
@@ -455,6 +464,97 @@ def list_stories(
         return {
             "success": False,
             "message": f"Error listing stories: {str(e)}",
+        }
+
+def list_story_dependencies(
+    auth_manager: AuthManager,
+    server_config: ServerConfig,
+    params: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    List story dependencies from ServiceNow.
+
+    Args:
+        auth_manager: The authentication manager.
+        server_config: The server configuration.
+        params: The parameters for listing story dependencies.
+
+    Returns:
+        A list of story dependencies.
+    """
+    # Unwrap and validate parameters
+    result = _unwrap_and_validate_params(
+        params, 
+        ListStoryDependenciesParams
+    )
+    
+    if not result["success"]:
+        return result
+    
+    validated_params = result["params"]
+    
+    # Build the query
+    query_parts = []
+    
+    if validated_params.dependent_story:
+        query_parts.append(f"dependent_story={validated_params.dependent_story}")
+    if validated_params.prerequisite_story:
+        query_parts.append(f"prerequisite_story={validated_params.prerequisite_story}")
+    
+    # Add any additional query string
+    if validated_params.query:
+        query_parts.append(validated_params.query)
+    
+    # Combine query parts
+    query = "^".join(query_parts) if query_parts else ""
+    
+    # Get the instance URL
+    instance_url = _get_instance_url(auth_manager, server_config)
+    if not instance_url:
+        return {
+            "success": False,
+            "message": "Cannot find instance_url in either server_config or auth_manager",
+        }
+    
+    # Get the headers
+    headers = _get_headers(auth_manager, server_config)
+    if not headers:
+        return {
+            "success": False,
+            "message": "Cannot find get_headers method in either auth_manager or server_config",
+        }
+    
+    # Make the API request
+    url = f"{instance_url}/api/now/table/m2m_story_dependencies"
+    
+    params = {
+        "sysparm_limit": validated_params.limit,
+        "sysparm_offset": validated_params.offset,
+        "sysparm_query": query,
+        "sysparm_display_value": "true",
+    }
+    
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        
+        result = response.json()
+        
+        # Handle the case where result["result"] is a list
+        story_dependencies = result.get("result", [])
+        count = len(story_dependencies)
+        
+        return {
+            "success": True,
+            "story_dependencies": story_dependencies,
+            "count": count,
+            "total": count,  # Use count as total if total is not provided
+        }
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error listing story dependencies: {e}")
+        return {
+            "success": False,
+            "message": f"Error listing story dependencies: {str(e)}",
         }
 
 def create_story_dependency(
