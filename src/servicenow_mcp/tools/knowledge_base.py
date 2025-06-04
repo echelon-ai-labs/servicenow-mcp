@@ -42,7 +42,8 @@ class CreateCategoryParams(BaseModel):
     title: str = Field(..., description="Title of the category")
     description: Optional[str] = Field(None, description="Description of the category")
     knowledge_base: str = Field(..., description="The knowledge base to create the category in")
-    parent_category: Optional[str] = Field(None, description="Parent category (if creating a subcategory)")
+    parent_category: Optional[str] = Field(None, description="Parent category (if creating a subcategory). Sys_id refering to the parent category or sys_id of the parent table.")
+    parent_table: Optional[str] = Field(None, description="Parent table (if creating a subcategory). Sys_id refering to the table where the parent category is defined.")
     active: bool = Field(True, description="Whether the category is active")
 
 
@@ -50,12 +51,12 @@ class CreateArticleParams(BaseModel):
     """Parameters for creating a knowledge article."""
 
     title: str = Field(..., description="Title of the article")
-    text: str = Field(..., description="The main body text for the article")
+    text: str = Field(..., description="The main body text for the article. Field supports html formatting and wiki markup based on the article_type. HTML is the default.")
     short_description: str = Field(..., description="Short description of the article")
     knowledge_base: str = Field(..., description="The knowledge base to create the article in")
     category: str = Field(..., description="Category for the article")
     keywords: Optional[str] = Field(None, description="Keywords for search")
-    article_type: Optional[str] = Field("text", description="The type of article")
+    article_type: Optional[str] = Field("html", description="The type of article. Options are 'text' or 'wiki'. text lets the text field support html formatting. wiki lets the text field support wiki markup.")
 
 
 class UpdateArticleParams(BaseModel):
@@ -63,7 +64,7 @@ class UpdateArticleParams(BaseModel):
 
     article_id: str = Field(..., description="ID of the article to update")
     title: Optional[str] = Field(None, description="Updated title of the article")
-    text: Optional[str] = Field(None, description="Updated main body text for the article")
+    text: Optional[str] = Field(None, description="Updated main body text for the article. Field supports html formatting and wiki markup based on the article_type. HTML is the default.")
     short_description: Optional[str] = Field(None, description="Updated short description")
     category: Optional[str] = Field(None, description="Updated category for the article")
     keywords: Optional[str] = Field(None, description="Updated keywords for search")
@@ -351,6 +352,8 @@ def create_category(
         data["description"] = params.description
     if params.parent_category:
         data["parent"] = params.parent_category
+    if params.parent_table:
+        data["parent_table"] = params.parent_table
     
     # Log the request data for debugging
     logger.debug(f"Creating category with data: {data}")

@@ -291,6 +291,7 @@ from servicenow_mcp.tools.story_tools import (
     CreateStoryParams,
     UpdateStoryParams,
     ListStoriesParams,
+    ListStoryDependenciesParams,
     CreateStoryDependencyParams,
     DeleteStoryDependencyParams,
 )
@@ -298,6 +299,7 @@ from servicenow_mcp.tools.story_tools import (
     create_story as create_story_tool,
     update_story as update_story_tool,
     list_stories as list_stories_tool,
+    list_story_dependencies as list_story_dependencies_tool,
     create_story_dependency as create_story_dependency_tool,
     delete_story_dependency as delete_story_dependency_tool,
 )
@@ -851,6 +853,13 @@ def get_tool_definitions(
             ListStoriesParams,
             str,  # Expects JSON string
             "List stories from ServiceNow",
+            "json",  # Tool returns list/dict
+        ),
+        "list_story_dependencies": (
+            list_story_dependencies_tool,
+            ListStoryDependenciesParams,
+            str,  # Expects JSON string
+            "List story dependencies from ServiceNow",
             "json",  # Tool returns list/dict
         ),
         "create_story_dependency": (

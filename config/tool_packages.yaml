@@ -113,6 +113,7 @@ agile_management:
   - create_story
   - update_story
   - list_stories
+  - list_story_dependencies
   - create_story_dependency
   - delete_story_dependency
   # Epic Management
@@ -240,6 +241,7 @@ full:
   - create_story
   - update_story
   - list_stories
+  - list_story_dependencies
   - create_story_dependency
   - delete_story_dependency
   # Epic Management

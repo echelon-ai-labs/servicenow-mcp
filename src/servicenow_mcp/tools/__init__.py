@@ -93,6 +93,7 @@ from servicenow_mcp.tools.story_tools import (
     create_story,
     update_story,
     list_stories,
+    list_story_dependencies,
     create_story_dependency,
     delete_story_dependency,
 )
@@ -201,6 +202,7 @@ __all__ = [
     "create_story",
     "update_story",
     "list_stories",
+    "list_story_dependencies",
     "create_story_dependency",
     "delete_story_dependency",
     
