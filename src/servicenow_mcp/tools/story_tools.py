@@ -64,19 +64,19 @@ class ListStoryDependenciesParams(BaseModel):
     limit: Optional[int] = Field(10, description="Maximum number of records to return")
     offset: Optional[int] = Field(0, description="Offset to start from")
     query: Optional[str] = Field(None, description="Additional query string")
-    dependent_story: Optional[str] = Field(None, description="Story ID or sys_id of the dependent story")
-    prerequisite_story: Optional[str] = Field(None, description="Story ID or sys_id that this story depends on")
+    dependent_story: Optional[str] = Field(None, description="Sys_id of the dependent story is required")
+    prerequisite_story: Optional[str] = Field(None, description="Sys_id that this story depends on is required")
 
 class CreateStoryDependencyParams(BaseModel):
     """Parameters for creating a story dependency."""
 
-    dependent_story: str = Field(..., description="Story ID or sys_id of the dependent story")
-    prerequisite_story: str = Field(..., description="Story ID or sys_id that this story depends on")
+    dependent_story: str = Field(..., description="Sys_id of the dependent story is required")
+    prerequisite_story: str = Field(..., description="Sys_id that this story depends on is required")
 
 class DeleteStoryDependencyParams(BaseModel):
     """Parameters for deleting a story dependency."""
 
-    dependency_id: str = Field(..., description="Dependency ID or sys_id")
+    dependency_id: str = Field(..., description="Sys_id of the dependency is required")
 
 def _unwrap_and_validate_params(params: Any, model_class: Type[T], required_fields: List[str] = None) -> Dict[str, Any]:
     """
