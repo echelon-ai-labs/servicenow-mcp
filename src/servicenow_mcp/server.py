@@ -95,7 +95,7 @@ class ServiceNowMCP:
         else:
             self.config = config
 
-        self.auth_manager = AuthManager(self.config.auth)
+        self.auth_manager = AuthManager(self.config.auth, self.config.instance_url)
         self.mcp_server = Server("ServiceNow")  # Use low-level Server
         self.name = "ServiceNow"
 

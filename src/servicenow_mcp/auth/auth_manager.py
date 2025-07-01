@@ -4,6 +4,7 @@ Authentication manager for the ServiceNow MCP server.
 
 import base64
 import logging
+import os
 from typing import Dict, Optional
 
 import requests
@@ -23,14 +24,16 @@ class AuthManager:
     different authentication methods.
     """
     
-    def __init__(self, config: AuthConfig):
+    def __init__(self, config: AuthConfig, instance_url: str = None):
         """
         Initialize the authentication manager.
         
         Args:
             config: Authentication configuration.
+            instance_url: ServiceNow instance URL.
         """
         self.config = config
+        self.instance_url = instance_url
         self.token: Optional[str] = None
         self.token_type: Optional[str] = None
     
@@ -77,43 +80,65 @@ class AuthManager:
         """
         if not self.config.oauth:
             raise ValueError("OAuth configuration is required")
-        
         oauth_config = self.config.oauth
-        
+
         # Determine token URL
         token_url = oauth_config.token_url
         if not token_url:
-            # Extract instance name from instance URL
-            instance_parts = oauth_config.instance_url.split(".")
+            if not self.instance_url:
+                raise ValueError("Instance URL is required for OAuth authentication")
+            instance_parts = self.instance_url.split(".")
             if len(instance_parts) < 2:
-                raise ValueError(f"Invalid instance URL: {oauth_config.instance_url}")
-            
+                raise ValueError(f"Invalid instance URL: {self.instance_url}")
             instance_name = instance_parts[0].split("//")[-1]
             token_url = f"https://{instance_name}.service-now.com/oauth_token.do"
-        
-        # Request token
-        data = {
-            "grant_type": "password",
-            "client_id": oauth_config.client_id,
-            "client_secret": oauth_config.client_secret,
-            "username": oauth_config.username,
-            "password": oauth_config.password,
+
+        # Prepare Authorization header
+        auth_str = f"{oauth_config.client_id}:{oauth_config.client_secret}"
+        auth_header = base64.b64encode(auth_str.encode()).decode()
+        headers = {
+            "Authorization": f"Basic {auth_header}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+
+        # Try client_credentials grant first
+        data_client_credentials = {
+            "grant_type": "client_credentials"
         }
         
-        try:
-            response = requests.post(token_url, data=data)
-            response.raise_for_status()
-            
+        logger.info("Attempting client_credentials grant...")
+        response = requests.post(token_url, headers=headers, data=data_client_credentials)
+        
+        logger.info(f"client_credentials response status: {response.status_code}")
+        logger.info(f"client_credentials response body: {response.text}")
+        
+        if response.status_code == 200:
             token_data = response.json()
             self.token = token_data.get("access_token")
             self.token_type = token_data.get("token_type", "Bearer")
+            return
+
+        # Try password grant if client_credentials failed
+        if oauth_config.username and oauth_config.password:
+            data_password = {
+                "grant_type": "password",
+                "username": oauth_config.username,
+                "password": oauth_config.password
+            }
             
-            if not self.token:
-                raise ValueError("No access token in response")
+            logger.info("Attempting password grant...")
+            response = requests.post(token_url, headers=headers, data=data_password)
             
-        except requests.RequestException as e:
-            logger.error(f"Failed to get OAuth token: {e}")
-            raise ValueError(f"Failed to get OAuth token: {e}")
+            logger.info(f"password grant response status: {response.status_code}")
+            logger.info(f"password grant response body: {response.text}")
+            
+            if response.status_code == 200:
+                token_data = response.json()
+                self.token = token_data.get("access_token")
+                self.token_type = token_data.get("token_type", "Bearer")
+                return
+
+        raise ValueError("Failed to get OAuth token using both client_credentials and password grants.")
     
     def refresh_token(self):
         """Refresh the OAuth token if using OAuth authentication."""
