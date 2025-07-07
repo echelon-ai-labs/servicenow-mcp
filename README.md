@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/echelon-ai-labs-servicenow-mcp-badge.png)](https://mseep.ai/app/echelon-ai-labs-servicenow-mcp)
+
 # ServiceNow MCP Server
 
 A Model Completion Protocol (MCP) server implementation for ServiceNow, allowing Claude to interact with ServiceNow instances.
