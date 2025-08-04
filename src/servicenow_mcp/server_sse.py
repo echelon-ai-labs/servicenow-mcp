@@ -15,6 +15,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
 from starlette.applications import Starlette
 from starlette.requests import Request
+from starlette.responses import PlainTextResponse
 from starlette.routing import Mount, Route
 
 from servicenow_mcp.server import ServiceNowMCP
@@ -37,9 +38,13 @@ def create_starlette_app(mcp_server: Server, *, debug: bool = False) -> Starlett
                 mcp_server.create_initialization_options(),
             )
 
+    async def health_check(request: Request) -> PlainTextResponse:
+        return PlainTextResponse("OK", status_code=200)
+
     return Starlette(
         debug=debug,
         routes=[
+            Route("/health", endpoint=health_check),
             Route("/sse", endpoint=handle_sse),
             Mount("/messages/", app=sse.handle_post_message),
         ],
