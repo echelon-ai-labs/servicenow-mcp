@@ -16,6 +16,10 @@ service_desk:
   - resolve_incident
   - list_incidents
   - get_incident_by_number
+  # Catalog Task Management
+  - list_catalog_tasks
+  - get_catalog_task
+  - update_catalog_task
   # User Lookup
   - get_user
   - list_users
@@ -154,6 +158,10 @@ full:
   - resolve_incident
   - list_incidents
   - get_incident_by_number
+  # Catalog Task Management
+  - list_catalog_tasks
+  - get_catalog_task
+  - update_catalog_task
   # Catalog (Core)
   - list_catalogs
   - list_catalog_items

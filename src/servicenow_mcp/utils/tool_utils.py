@@ -333,6 +333,16 @@ from servicenow_mcp.tools.project_tools import (
     update_project as update_project_tool,
     list_projects as list_projects_tool,
 )
+from servicenow_mcp.tools.catalog_task_tools import (
+    ListCatalogTasksParams,
+    GetCatalogTaskParams,
+    UpdateCatalogTaskParams,
+)
+from servicenow_mcp.tools.catalog_task_tools import (
+    list_catalog_tasks as list_catalog_tasks_tool,
+    get_catalog_task as get_catalog_task_tool,
+    update_catalog_task as update_catalog_task_tool,
+)
 
 # Define a type alias for the Pydantic models or dataclasses used for params
 ParamsModel = Type[Any]  # Use Type[Any] for broader compatibility initially
@@ -941,6 +951,28 @@ def get_tool_definitions(
             str,  # Expects JSON string
             "List projects from ServiceNow",
             "json",  # Tool returns list/dict
+        ),
+        # Catalog Task Tools
+        "list_catalog_tasks": (
+            list_catalog_tasks_tool,
+            ListCatalogTasksParams,
+            str,  # Expects JSON string
+            "List service catalog tasks from ServiceNow",
+            "json",  # Tool returns list/dict
+        ),
+        "get_catalog_task": (
+            get_catalog_task_tool,
+            GetCatalogTaskParams,
+            str,  # Expects JSON string
+            "Get a specific service catalog task from ServiceNow",
+            "json",  # Tool returns dict
+        ),
+        "update_catalog_task": (
+            update_catalog_task_tool,
+            UpdateCatalogTaskParams,
+            str,  # Expects JSON string
+            "Update an existing service catalog task in ServiceNow",
+            "str",  # Tool returns Pydantic model
         ),
     }
     return tool_definitions
