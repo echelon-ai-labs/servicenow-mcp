@@ -91,7 +91,7 @@ def list_catalog_tasks(
     if params.request:
         filters.append(f"request={params.request}")
     if params.query:
-        filters.append(f"short_descriptionLIKE{params.query}^ORdescriptionLIKE{params.query}")
+        filters.append(f"numberLIKE{params.query}^ORshort_descriptionLIKE{params.query}^ORdescriptionLIKE{params.query}")
     
     if filters:
         query_params["sysparm_query"] = "^".join(filters)
