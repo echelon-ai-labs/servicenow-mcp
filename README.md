@@ -34,7 +34,7 @@ This project implements an MCP server that enables Claude to connect to ServiceN
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/servicenow-mcp.git
+   git clone https://github.com/echelon-ai-labs/servicenow-mcp.git
    cd servicenow-mcp
    ```
 
