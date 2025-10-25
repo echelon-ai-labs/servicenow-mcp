@@ -47,6 +47,15 @@ servicenow-mcp-sse = "servicenow_mcp.server_sse:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/servicenow_mcp"]
 
+[tool.hatch.build.targets.wheel.shared-data]
+"src/servicenow_mcp/config" = "servicenow_mcp/config"
+
+[tool.hatch.build]
+include = [
+  "src/servicenow_mcp/**/*.py",
+  "src/servicenow_mcp/config/*.yaml",
+]
+
 [tool.black]
 line-length = 100
 target-version = ["py311"]
@@ -74,3 +83,7 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "--ignore=examples" 
+
+# Include config files in the package for uvx/pip installations
+[tool.hatch.build.targets.wheel.force-include]
+"src/servicenow_mcp/config/tool_packages.yaml" = "servicenow_mcp/config/tool_packages.yaml"

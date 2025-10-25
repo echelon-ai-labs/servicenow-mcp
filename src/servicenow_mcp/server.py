@@ -7,7 +7,17 @@ This module provides the main implementation of the ServiceNow MCP server.
 import json
 import logging
 import os
+import sys
 from typing import Any, Dict, List, Union
+
+# Import importlib.resources for package resource loading
+if sys.version_info >= (3, 9):
+    from importlib.resources import files
+else:
+    try:
+        from importlib_resources import files
+    except ImportError:
+        files = None
 
 import mcp.types as types
 import yaml
@@ -28,7 +38,7 @@ from servicenow_mcp.utils.tool_utils import get_tool_definitions
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Define path for the configuration file
+# Define path for the configuration file (fallback for development)
 TOOL_PACKAGE_CONFIG_PATH = os.getenv("TOOL_PACKAGE_CONFIG_PATH", "config/tool_packages.yaml")
 
 
@@ -119,35 +129,77 @@ class ServiceNowMCP:
         logger.info("Registered list_tools and call_tool handlers.")
 
     def _load_package_config(self):
-        """Load tool package definitions from the YAML configuration file."""
-        config_path = TOOL_PACKAGE_CONFIG_PATH
-        if not os.path.isabs(config_path):
-            config_path = os.path.join(os.path.dirname(__file__), "..", "..", config_path)
-            config_path = os.path.abspath(config_path)
+        """Load tool package definitions from the YAML configuration file.
+        
+        This method supports both package installations (uvx/pip) and development mode.
+        It first tries to load from package resources, then falls back to file path.
+        """
+        config_loaded = False
+        
+        # Try loading from package resources (works with uvx/pip)
+        if files is not None:
+            try:
+                config_file = files("servicenow_mcp").joinpath("config/tool_packages.yaml")
+                with config_file.open("r") as f:
+                    loaded_config = yaml.safe_load(f)
+                    if isinstance(loaded_config, dict):
+                        self.package_definitions = loaded_config
+                        logger.info("Successfully loaded tool package config from package resources")
+                        config_loaded = True
+                    else:
+                        logger.error(
+                            f"Invalid format in package resources config: Expected a dictionary, got {type(loaded_config)}."
+                        )
+            except (FileNotFoundError, ModuleNotFoundError, AttributeError) as e:
+                logger.debug(f"Could not load from package resources: {e}. Trying file path fallback.")
+        else:
+            # Fallback for older Python or missing importlib_resources
+            try:
+                import pkg_resources
+                config_path = pkg_resources.resource_filename("servicenow_mcp", "config/tool_packages.yaml")
+                with open(config_path, "r") as f:
+                    loaded_config = yaml.safe_load(f)
+                    if isinstance(loaded_config, dict):
+                        self.package_definitions = loaded_config
+                        logger.info("Successfully loaded tool package config from package resources (pkg_resources)")
+                        config_loaded = True
+            except Exception as e:
+                logger.debug(f"Could not load from pkg_resources: {e}. Trying file path fallback.")
+        
+        # Fallback to file path (for development)
+        if not config_loaded:
+            config_path = TOOL_PACKAGE_CONFIG_PATH
+            if not os.path.isabs(config_path):
+                config_path = os.path.join(os.path.dirname(__file__), "..", "..", config_path)
+                config_path = os.path.abspath(config_path)
 
-        try:
-            with open(config_path, "r") as f:
-                loaded_config = yaml.safe_load(f)
-                if isinstance(loaded_config, dict):
-                    self.package_definitions = loaded_config
-                    logger.info(f"Successfully loaded tool package config from {config_path}")
-                else:
-                    logger.error(
-                        f"Invalid format in {config_path}: Expected a dictionary, got {type(loaded_config)}. No packages loaded."
-                    )
-                    self.package_definitions = {}
-        except FileNotFoundError:
-            logger.error(
-                f"Tool package config file not found at {config_path}. No packages loaded."
-            )
-            self.package_definitions = {}
-        except yaml.YAMLError as e:
-            logger.error(
-                f"Error parsing tool package config file {config_path}: {e}. No packages loaded."
-            )
-            self.package_definitions = {}
-        except Exception as e:
-            logger.error(f"Unexpected error loading tool package config {config_path}: {e}")
+            try:
+                with open(config_path, "r") as f:
+                    loaded_config = yaml.safe_load(f)
+                    if isinstance(loaded_config, dict):
+                        self.package_definitions = loaded_config
+                        logger.info(f"Successfully loaded tool package config from {config_path}")
+                        config_loaded = True
+                    else:
+                        logger.error(
+                            f"Invalid format in {config_path}: Expected a dictionary, got {type(loaded_config)}. No packages loaded."
+                        )
+                        self.package_definitions = {}
+            except FileNotFoundError:
+                logger.error(
+                    f"Tool package config file not found at {config_path}. No packages loaded."
+                )
+                self.package_definitions = {}
+            except yaml.YAMLError as e:
+                logger.error(
+                    f"Error parsing tool package config file {config_path}: {e}. No packages loaded."
+                )
+                self.package_definitions = {}
+            except Exception as e:
+                logger.error(f"Unexpected error loading tool package config {config_path}: {e}")
+                self.package_definitions = {}
+        
+        if not config_loaded:
             self.package_definitions = {}
 
     def _determine_enabled_tools(self):
