@@ -1,0 +1,55 @@
+# Git files
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+README*
+
+# Logs
+*.log
+
+# Testing
+.pytest_cache/
+.coverage
+tests/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Development files
+.env
+.env.*
+!.env.example
+
+# Examples and scripts
+examples/
+scripts/
+prompts/
+debug_*.py
