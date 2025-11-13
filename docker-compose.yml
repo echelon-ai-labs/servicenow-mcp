@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  servicenow-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: servicenow-mcp-server
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SERVICENOW_INSTANCE_URL=${SERVICENOW_INSTANCE_URL}
+      - SERVICENOW_USERNAME=${SERVICENOW_USERNAME}
+      - SERVICENOW_PASSWORD=${SERVICENOW_PASSWORD}
+      - SERVICENOW_AUTH_TYPE=${SERVICENOW_AUTH_TYPE:-basic}
+    restart: unless-stopped
+    # For MCP stdio transport, we need to keep the container running
+    stdin_open: true
+    tty: true

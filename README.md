@@ -32,6 +32,8 @@ This project implements an MCP server that enables Claude to connect to ServiceN
 
 ### Setup
 
+#### Option 1: Run with Python directly
+
 1. Clone this repository:
    ```
    git clone https://github.com/echelon-ai-labs/servicenow-mcp.git
@@ -52,6 +54,69 @@ This project implements an MCP server that enables Claude to connect to ServiceN
    SERVICENOW_PASSWORD=your-password
    SERVICENOW_AUTH_TYPE=basic  # or oauth, api_key
    ```
+
+#### Option 2: Run with Docker
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/echelon-ai-labs/servicenow-mcp.git
+   cd servicenow-mcp
+   ```
+
+2. Build the Docker image:
+   ```bash
+   docker build -t servicenow-mcp:latest .
+   ```
+
+3. Create a `.env` file with your ServiceNow credentials (or set environment variables):
+   ```
+   SERVICENOW_INSTANCE_URL=https://your-instance.service-now.com
+   SERVICENOW_USERNAME=your-username
+   SERVICENOW_PASSWORD=your-password
+   SERVICENOW_AUTH_TYPE=basic  # or oauth, api_key
+   ```
+
+4. Run with Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
+
+   Or run directly with Docker:
+   ```bash
+   docker run --rm -i \
+     -e SERVICENOW_INSTANCE_URL=https://your-instance.service-now.com \
+     -e SERVICENOW_USERNAME=your-username \
+     -e SERVICENOW_PASSWORD=your-password \
+     -e SERVICENOW_AUTH_TYPE=basic \
+     servicenow-mcp:latest
+   ```
+
+5. MCP instructions
+   ```json
+   {
+     "mcpServers": {
+       "ServiceNow": {
+         "command": "docker",
+         "args": [
+           "run",
+           "--rm",
+           "-i",
+           "-e",
+           "SERVICENOW_INSTANCE_URL=https://your-instance.service-now.com",
+           "-e",
+           "SERVICENOW_USERNAME=your-username",
+           "-e",
+           "SERVICENOW_PASSWORD=your-password",
+           "-e",
+           "SERVICENOW_AUTH_TYPE=basic",
+           "servicenow-mcp:latest"
+         ]
+       }
+     }
+   }
+   ```
+
+   Restart Claude Desktop to apply the changes.
 
 ## Usage
 
@@ -298,7 +363,9 @@ This command will register the ServiceNow MCP server with Claude and configure i
 
 To configure the ServiceNow MCP server in Claude Desktop:
 
-1. Edit the Claude Desktop configuration file at `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or the appropriate path for your OS:
+#### Option 1: Python Installation
+
+Edit the Claude Desktop configuration file at `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `~/.config/Claude/claude_desktop_config.json` (Linux) or the appropriate path for your OS:
 
 ```json
 {
@@ -320,7 +387,42 @@ To configure the ServiceNow MCP server in Claude Desktop:
 }
 ```
 
-2. Restart Claude Desktop to apply the changes
+#### Option 2: Docker Installation
+
+Edit the Claude Desktop configuration file:
+
+```json
+{
+  "mcpServers": {
+    "ServiceNow": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-e",
+        "SERVICENOW_INSTANCE_URL=https://your-instance.service-now.com",
+        "-e",
+        "SERVICENOW_USERNAME=your-username",
+        "-e",
+        "SERVICENOW_PASSWORD=your-password",
+        "-e",
+        "SERVICENOW_AUTH_TYPE=basic",
+        "servicenow-mcp:latest"
+      ],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+**Note:** Before using the Docker option, make sure you've built the Docker image with:
+```bash
+cd /path/to/servicenow-mcp
+docker build -t servicenow-mcp:latest .
+```
+
+Restart Claude Desktop to apply the changes
 
 ### Example Usage with Claude
 
