@@ -28,9 +28,10 @@ class OAuthConfig(BaseModel):
 
     client_id: str
     client_secret: str
-    username: str
-    password: str
+    username: Optional[str] = None
+    password: Optional[str] = None
     token_url: Optional[str] = None
+    resource_url: Optional[str] = None
 
 
 class ApiKeyConfig(BaseModel):
@@ -56,8 +57,9 @@ class ServerConfig(BaseModel):
     auth: AuthConfig
     debug: bool = False
     timeout: int = 30
+    api_path: Optional[str] = Field(default="api", description="API path segment for the ServiceNow instance")
 
     @property
     def api_url(self) -> str:
         """Get the API URL for the ServiceNow instance."""
-        return f"{self.instance_url}/api/now"
+        return f"{self.instance_url}/{self.api_path}/now"
