@@ -105,12 +105,14 @@ class AuthManager:
         data_client_credentials = {
             "grant_type": "client_credentials"
         }
+        if oauth_config.resource_url:
+            data_client_credentials["resource"] = oauth_config.resource_url
         
         logger.info("Attempting client_credentials grant...")
-        response = requests.post(token_url, headers=headers, data=data_client_credentials)
+        response = requests.post(token_url, headers=headers, data=data_client_credentials, verify=False)
         
         logger.info(f"client_credentials response status: {response.status_code}")
-        logger.info(f"client_credentials response body: {response.text}")
+        # logger.info(f"client_credentials response body: {response.text}")
         
         if response.status_code == 200:
             token_data = response.json()

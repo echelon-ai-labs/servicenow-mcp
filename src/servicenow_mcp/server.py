@@ -23,6 +23,20 @@ from servicenow_mcp.tools.knowledge_base import (
 )
 from servicenow_mcp.utils.config import ServerConfig
 from servicenow_mcp.utils.tool_utils import get_tool_definitions
+import requests
+import urllib3
+
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Monkey patch requests to disable SSL verification globally
+original_request = requests.Session.request
+
+def patched_request(self, method, url, **kwargs):
+    kwargs.setdefault('verify', False)
+    return original_request(self, method, url, **kwargs)
+
+requests.Session.request = patched_request
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

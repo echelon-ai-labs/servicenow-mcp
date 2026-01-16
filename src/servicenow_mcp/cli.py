@@ -21,6 +21,21 @@ from servicenow_mcp.utils.config import (
     ServerConfig,
 )
 
+import requests
+import urllib3
+
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Monkey patch requests to disable SSL verification globally
+original_request = requests.Session.request
+
+def patched_request(self, method, url, **kwargs):
+    kwargs.setdefault('verify', False)
+    return original_request(self, method, url, **kwargs)
+
+requests.Session.request = patched_request
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -134,6 +149,8 @@ def create_config(args) -> ServerConfig:
 
     # Instance URL validation
     instance_url = args.instance_url
+    api_path = os.getenv("SERVICENOW_API_PATH") or "api"
+
     if not instance_url:
         # Attempt to load from .env if not provided via args/env vars directly in parse_args
         instance_url = os.getenv("SERVICENOW_INSTANCE_URL")
@@ -169,10 +186,16 @@ def create_config(args) -> ServerConfig:
         username = args.username or os.getenv("SERVICENOW_USERNAME")  # Needed for password grant
         password = args.password or os.getenv("SERVICENOW_PASSWORD")  # Needed for password grant
         token_url = args.token_url or os.getenv("SERVICENOW_TOKEN_URL")
+        resource_url = os.getenv("SERVICENOW_RESOURCE_URL")  # Optional, depending on OAuth server
 
-        if not client_id or not client_secret or not username or not password:
+        if not username:
+            username = ""
+        if not password:
+            password = ""
+
+        if not client_id or not client_secret:
             raise ValueError(
-                "Client ID, client secret, username, and password are required for OAuth password grant"
+                "Client ID, client secret are required"
                 " (--client-id/SERVICENOW_CLIENT_ID, etc.)"
             )
         if not token_url:
@@ -187,6 +210,7 @@ def create_config(args) -> ServerConfig:
             username=username,
             password=password,
             token_url=token_url,
+            resource_url=resource_url
         )
         # Create the main AuthConfig wrapper
         final_auth_config = AuthConfig(type=auth_type, oauth=oauth_cfg)
@@ -229,6 +253,7 @@ def create_config(args) -> ServerConfig:
         debug=args.debug,
         timeout=args.timeout,
         script_execution_api_resource_path=script_execution_api_resource_path,
+        api_path=api_path,
     )
 
 
