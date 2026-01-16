@@ -456,27 +456,209 @@ The repository includes example scripts that demonstrate how to use the tools:
 
 ### Basic Authentication
 
+Basic authentication uses a username and password to authenticate with ServiceNow.
+
+**Environment Variables:**
 ```
 SERVICENOW_AUTH_TYPE=basic
 SERVICENOW_USERNAME=your-username
 SERVICENOW_PASSWORD=your-password
 ```
 
+**Configuration Example:**
+```python
+from servicenow_mcp.utils.config import ServerConfig, AuthConfig, AuthType, BasicAuthConfig
+
+config = ServerConfig(
+    instance_url="https://your-instance.service-now.com",
+    auth=AuthConfig(
+        type=AuthType.BASIC,
+        basic=BasicAuthConfig(
+            username="your-username",
+            password="your-password"
+        )
+    )
+)
+```
+
 ### OAuth Authentication
 
-```
+The ServiceNow MCP server supports two OAuth grant types for flexible authentication:
+
+#### 1. Client Credentials Grant (Recommended for Service-to-Service)
+
+Client credentials grant is the recommended approach for service-to-service authentication as it doesn't require storing user passwords. This is ideal for automated integrations and background services.
+
+**Environment Variables:**
+```bash
 SERVICENOW_AUTH_TYPE=oauth
 SERVICENOW_CLIENT_ID=your-client-id
 SERVICENOW_CLIENT_SECRET=your-client-secret
 SERVICENOW_TOKEN_URL=https://your-instance.service-now.com/oauth_token.do
+
+# Optional: For Azure AD-backed ServiceNow instances
+SERVICENOW_RESOURCE_URL=https://your-resource.service-now.com
 ```
+
+**Configuration Example:**
+```python
+from servicenow_mcp.utils.config import ServerConfig, AuthConfig, AuthType, OAuthConfig
+
+config = ServerConfig(
+    instance_url="https://your-instance.service-now.com",
+    auth=AuthConfig(
+        type=AuthType.OAUTH,
+        oauth=OAuthConfig(
+            client_id="your-client-id",
+            client_secret="your-client-secret",
+            token_url="https://your-instance.service-now.com/oauth_token.do"
+        )
+    )
+)
+```
+
+#### 2. Password Grant (Legacy/Development)
+
+Password grant requires both client credentials and user credentials. Use this for development or when client credentials grant is not available.
+
+**Environment Variables:**
+```bash
+SERVICENOW_AUTH_TYPE=oauth
+SERVICENOW_CLIENT_ID=your-client-id
+SERVICENOW_CLIENT_SECRET=your-client-secret
+SERVICENOW_USERNAME=your-username
+SERVICENOW_PASSWORD=your-password
+SERVICENOW_TOKEN_URL=https://your-instance.service-now.com/oauth_token.do
+```
+
+**Configuration Example:**
+```python
+from servicenow_mcp.utils.config import ServerConfig, AuthConfig, AuthType, OAuthConfig
+
+config = ServerConfig(
+    instance_url="https://your-instance.service-now.com",
+    auth=AuthConfig(
+        type=AuthType.OAUTH,
+        oauth=OAuthConfig(
+            client_id="your-client-id",
+            client_secret="your-client-secret",
+            username="your-username",
+            password="your-password",
+            token_url="https://your-instance.service-now.com/oauth_token.do"
+        )
+    )
+)
+```
+
+#### Azure AD-Backed ServiceNow Instances
+
+For ServiceNow instances backed by Azure AD, you'll need to provide additional configuration:
+
+**Environment Variables:**
+```bash
+SERVICENOW_AUTH_TYPE=oauth
+SERVICENOW_CLIENT_ID=your-azure-client-id
+SERVICENOW_CLIENT_SECRET=your-azure-client-secret
+SERVICENOW_TOKEN_URL=https://login.microsoftonline.com/your-tenant/oauth2/token
+SERVICENOW_RESOURCE_URL=https://your-servicenow-resource.com
+SERVICENOW_INSTANCE_URL=https://your-gateway-or-apigee-url.com
+SERVICENOW_API_PATH=custom/api/path  # Optional, defaults to "api"
+```
+
+**Configuration Example:**
+```python
+from servicenow_mcp.utils.config import ServerConfig, AuthConfig, AuthType, OAuthConfig
+
+config = ServerConfig(
+    instance_url="https://your-gateway.apigee.net",
+    api_path="apg-001-servicenow/v1",  # Custom API path
+    auth=AuthConfig(
+        type=AuthType.OAUTH,
+        oauth=OAuthConfig(
+            client_id="your-azure-client-id",
+            client_secret="your-azure-client-secret",
+            token_url="https://login.microsoftonline.com/your-tenant/oauth2/token",
+            resource_url="https://your-servicenow-resource.com"
+        )
+    )
+)
+```
+
+#### OAuth Configuration Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `client_id` | Yes | OAuth client ID |
+| `client_secret` | Yes | OAuth client secret |
+| `token_url` | Yes | OAuth token endpoint URL |
+| `username` | No | User username (for password grant) |
+| `password` | No | User password (for password grant) |
+| `resource_url` | No | Resource URL (for Azure AD authentication) |
+
+#### OAuth Authentication Flow
+
+The server implements intelligent OAuth authentication with automatic fallback:
+
+1. **Primary**: Attempts client credentials grant using `client_id`, `client_secret`, and optional `resource_url`
+2. **Fallback**: If client credentials fail and `username`/`password` are provided, falls back to password grant
+
+This ensures maximum compatibility with different ServiceNow configurations.
 
 ### API Key Authentication
 
-```
+**Environment Variables:**
+```bash
 SERVICENOW_AUTH_TYPE=api_key
 SERVICENOW_API_KEY=your-api-key
 ```
+
+**Configuration Example:**
+```python
+from servicenow_mcp.utils.config import ServerConfig, AuthConfig, AuthType, ApiKeyConfig
+
+config = ServerConfig(
+    instance_url="https://your-instance.service-now.com",
+    auth=AuthConfig(
+        type=AuthType.API_KEY,
+        api_key=ApiKeyConfig(
+            api_key="your-api-key"
+        )
+    )
+)
+```
+
+### Custom API Path Configuration
+
+If your ServiceNow instance uses a custom API path (e.g., behind an API gateway or proxy), you can configure it:
+
+**Environment Variable:**
+```bash
+SERVICENOW_API_PATH=custom/api/path  # Defaults to "api" if not specified
+```
+
+**Configuration Example:**
+```python
+config = ServerConfig(
+    instance_url="https://your-instance.service-now.com",
+    api_path="custom/api/v2",  # Results in: https://your-instance.com/custom/api/v2/now
+    auth=AuthConfig(...)
+)
+```
+
+The full API URL will be constructed as: `{instance_url}/{api_path}/now`
+
+### Troubleshooting Authentication
+
+#### OAuth Token Errors
+- Verify `client_id` and `client_secret` are correct
+- Ensure `token_url` points to the correct OAuth endpoint
+- For Azure AD, confirm `resource_url` matches your ServiceNow resource
+
+#### SSL Certificate Errors
+The server automatically disables SSL verification for development. For production, ensure proper SSL certificates are configured.
+
+#### API Path Issues
+If you receive 404 errors, verify your `api_path` configuration matches your ServiceNow instance setup.
 
 ## Development
 
