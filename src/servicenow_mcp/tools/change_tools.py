@@ -169,9 +169,9 @@ def _get_instance_url(auth_manager: AuthManager, server_config: ServerConfig) ->
     Returns:
         The instance URL if found, None otherwise.
     """
-    if hasattr(server_config, 'instance_url'):
+    if hasattr(server_config, 'instance_url') and server_config.instance_url:
         return server_config.instance_url
-    elif hasattr(auth_manager, 'instance_url'):
+    elif hasattr(auth_manager, 'instance_url') and auth_manager.instance_url:
         return auth_manager.instance_url
     else:
         logger.error("Cannot find instance_url in either server_config or auth_manager")
