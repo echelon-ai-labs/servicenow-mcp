@@ -608,7 +608,7 @@ class TestKnowledgeBaseParams(unittest.TestCase):
         self.assertEqual("Test short description", params.short_description)
         self.assertEqual("kb001", params.knowledge_base)
         self.assertEqual("cat001", params.category)
-        self.assertEqual("text", params.article_type)
+        self.assertEqual("html", params.article_type)
 
         # All parameters
         params = CreateArticleParams(
