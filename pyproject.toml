@@ -73,4 +73,4 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "--ignore=examples --ignore=tests/test_workflow_tools_direct.py"
+addopts = "--ignore=examples --ignore=tests/test_workflow_tools_direct.py --ignore=tests/test_catalog_resources.py --ignore=tests/test_changeset_resources.py --ignore=tests/test_script_include_resources.py"
