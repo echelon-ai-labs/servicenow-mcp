@@ -203,6 +203,17 @@ from servicenow_mcp.tools.script_include_tools import (
 from servicenow_mcp.tools.script_include_tools import (
     update_script_include as update_script_include_tool,
 )
+from servicenow_mcp.tools.scripted_rest_tools import (
+    CreateScriptedRestApiParams,
+    CreateScriptedRestResourceParams,
+    ScriptedRestResponse,
+)
+from servicenow_mcp.tools.scripted_rest_tools import (
+    create_scripted_rest_api as create_scripted_rest_api_tool,
+)
+from servicenow_mcp.tools.scripted_rest_tools import (
+    create_scripted_rest_resource as create_scripted_rest_resource_tool,
+)
 from servicenow_mcp.tools.user_tools import (
     AddGroupMembersParams,
     CreateGroupParams,
@@ -336,6 +347,16 @@ from servicenow_mcp.tools.project_tools import (
     create_project as create_project_tool,
     update_project as update_project_tool,
     list_projects as list_projects_tool,
+)
+from servicenow_mcp.tools.table_tools import (
+    GetRecordParams,
+    QueryTableParams,
+)
+from servicenow_mcp.tools.table_tools import (
+    get_record as get_record_tool,
+)
+from servicenow_mcp.tools.table_tools import (
+    query_table as query_table_tool,
 )
 
 # Define a type alias for the Pydantic models or dataclasses used for params
@@ -714,6 +735,21 @@ def get_tool_definitions(
             "Delete a script include in ServiceNow",
             "json_dict",  # Tool returns Pydantic model
         ),
+        # Scripted REST API Tools
+        "create_scripted_rest_api": (
+            create_scripted_rest_api_tool,
+            CreateScriptedRestApiParams,
+            ScriptedRestResponse,  # Expects Pydantic model
+            "Create a new Scripted REST API service in ServiceNow",
+            "raw_pydantic",  # Tool returns Pydantic model
+        ),
+        "create_scripted_rest_resource": (
+            create_scripted_rest_resource_tool,
+            CreateScriptedRestResourceParams,
+            ScriptedRestResponse,  # Expects Pydantic model
+            "Create a new Scripted REST API resource (operation) under a service in ServiceNow",
+            "raw_pydantic",  # Tool returns Pydantic model
+        ),
         # Knowledge Base Tools
         "create_knowledge_base": (
             create_knowledge_base_tool,
@@ -952,6 +988,21 @@ def get_tool_definitions(
             str,  # Expects JSON string
             "List projects from ServiceNow",
             "json",  # Tool returns list/dict
+        ),
+        # Generic Table API Tools
+        "query_table": (
+            query_table_tool,
+            QueryTableParams,
+            Dict[str, Any],
+            "Query any ServiceNow table (e.g. sys_update_set, cmdb_ci, sys_user). Use count_only=true to get total record counts. Best for: counting records, querying tables without dedicated tools, update sets, CMDB items, and any table query.",
+            "raw_dict",
+        ),
+        "get_record": (
+            get_record_tool,
+            GetRecordParams,
+            Dict[str, Any],
+            "Get a single record from any ServiceNow table by sys_id",
+            "raw_dict",
         ),
     }
     return tool_definitions

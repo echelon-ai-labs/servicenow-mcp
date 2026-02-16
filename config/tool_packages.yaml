@@ -100,6 +100,9 @@ platform_developer:
   # General UI Policies
   - create_ui_policy
   - create_ui_policy_action
+  # Scripted REST APIs
+  - create_scripted_rest_api
+  - create_scripted_rest_resource
   # Changesets
   - list_changesets
   - get_changeset_details
@@ -129,6 +132,9 @@ agile_management:
   - create_project
   - update_project
   - list_projects
+  # Generic Table API
+  - query_table
+  - get_record
 
 system_administrator:
   # User Management
@@ -210,6 +216,9 @@ full:
   - update_script_include
   - delete_script_include
   - execute_script_include
+  # Scripted REST APIs
+  - create_scripted_rest_api
+  - create_scripted_rest_resource
   # Knowledge Base
   - create_knowledge_base
   - list_knowledge_bases
@@ -258,3 +267,6 @@ full:
   - create_project
   - update_project
   - list_projects
+  # Generic Table API
+  - query_table
+  - get_record
