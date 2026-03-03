@@ -596,24 +596,25 @@ class TestKnowledgeBaseParams(unittest.TestCase):
     def test_create_article_params(self):
         """Test CreateArticleParams validation."""
         # Required parameters
+        html = "<html><head></head><body><p>TEST</></body></html>"
         params = CreateArticleParams(
             title="Test Article",
-            text="Test content",
+            text=html,
             short_description="Test short description",
             knowledge_base="kb001",
             category="cat001"
         )
         self.assertEqual("Test Article", params.title)
-        self.assertEqual("Test content", params.text)
+        self.assertEqual(html, params.text)
         self.assertEqual("Test short description", params.short_description)
         self.assertEqual("kb001", params.knowledge_base)
         self.assertEqual("cat001", params.category)
-        self.assertEqual("text", params.article_type)
+        self.assertEqual("html", params.article_type)
 
         # All parameters
         params = CreateArticleParams(
             title="Test Article",
-            text="Test content",
+            text=html,
             short_description="Test short description",
             knowledge_base="kb001",
             category="cat001",
@@ -621,7 +622,7 @@ class TestKnowledgeBaseParams(unittest.TestCase):
             article_type="html"
         )
         self.assertEqual("Test Article", params.title)
-        self.assertEqual("Test content", params.text)
+        self.assertEqual(html, params.text)
         self.assertEqual("Test short description", params.short_description)
         self.assertEqual("kb001", params.knowledge_base)
         self.assertEqual("cat001", params.category)

@@ -108,6 +108,28 @@ platform_developer:
   - commit_changeset
   - publish_changeset
   - add_file_to_changeset
+  # Access Control & Security
+  - list_acls
+  - get_acl
+  - create_acl
+  - update_acl
+  - delete_acl
+  - list_roles_security
+  - get_role
+  - create_role
+  - update_role
+  - list_security_attributes
+  - create_security_attribute
+  # CMDB Management
+  - list_cis
+  - get_ci
+  - create_ci
+  - update_ci
+  - delete_ci
+  - list_ci_relationships
+  - create_ci_relationship
+  - delete_ci_relationship
+  - search_cis
 
 agile_management:
   # Story Management
@@ -142,9 +164,51 @@ system_administrator:
   - list_groups
   - add_group_members
   - remove_group_members
+  # Access Control & Security
+  - list_acls
+  - get_acl
+  - create_acl
+  - update_acl
+  - delete_acl
+  - list_roles_security
+  - get_role
+  - create_role
+  - update_role
+  - list_security_attributes
+  - create_security_attribute
   # System Logs
   - list_syslog_entries
   - get_syslog_entry
+  # CMDB Management
+  - list_cis
+  - get_ci
+  - create_ci
+  - update_ci
+  - delete_ci
+  - list_ci_relationships
+  - create_ci_relationship
+  - delete_ci_relationship
+  - search_cis
+
+security_administrator:
+  # Access Control Lists
+  - list_acls
+  - get_acl
+  - create_acl
+  - update_acl
+  - delete_acl
+  # Role Management
+  - list_roles_security
+  - get_role
+  - create_role
+  - update_role
+  # Security Attributes
+  - list_security_attributes
+  - create_security_attribute
+  # User/Group Lookup (for ACL assignment)
+  - get_user
+  - list_users
+  - list_groups
 
 full:
   # Incident Management
@@ -258,3 +322,25 @@ full:
   - create_project
   - update_project
   - list_projects
+  # Access Control & Security
+  - list_acls
+  - get_acl
+  - create_acl
+  - update_acl
+  - delete_acl
+  - list_roles_security
+  - get_role
+  - create_role
+  - update_role
+  - list_security_attributes
+  - create_security_attribute
+  # CMDB Management
+  - list_cis
+  - get_ci
+  - create_ci
+  - update_ci
+  - delete_ci
+  - list_ci_relationships
+  - create_ci_relationship
+  - delete_ci_relationship
+  - search_cis

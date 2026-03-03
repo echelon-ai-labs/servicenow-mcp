@@ -3,6 +3,19 @@ Tools module for the ServiceNow MCP server.
 """
 
 # Import tools as they are implemented
+from servicenow_mcp.tools.acl_tools import (
+    list_acls,
+    get_acl,
+    create_acl,
+    update_acl,
+    delete_acl,
+    list_roles,
+    get_role,
+    create_role,
+    update_role,
+    list_security_attributes,
+    create_security_attribute
+    )
 from servicenow_mcp.tools.catalog_optimization import (
     get_optimization_recommendations,
     update_catalog_item,
@@ -38,6 +51,17 @@ from servicenow_mcp.tools.changeset_tools import (
     list_changesets,
     publish_changeset,
     update_changeset,
+)
+from servicenow_mcp.tools.cmdb_tools import (
+    list_cis,
+    get_ci,
+    create_ci,
+    update_ci,
+    delete_ci,
+    list_ci_relationships,
+    create_ci_relationship,
+    delete_ci_relationship,
+    search_cis,
 )
 from servicenow_mcp.tools.incident_tools import (
     add_comment,
@@ -222,11 +246,21 @@ __all__ = [
     "create_project",
     "update_project",
     "list_projects",
-
+    
+    # CMDB tools
+    "list_cis",
+    "get_ci",
+    "create_ci",
+    "update_ci",
+    "delete_ci",
+    "list_ci_relationships",
+    "create_ci_relationship",
+    "delete_ci_relationship",
+    "search_cis",
     
     # Future tools
     # "create_problem",
     # "update_problem",
     # "create_request",
     # "update_request",
-] 
+]

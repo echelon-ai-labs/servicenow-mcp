@@ -489,7 +489,58 @@ Additional documentation is available in the `docs` directory:
 - [Change Management](docs/change_management.md) - Detailed information about the Change Management tools
 - [Workflow Management](docs/workflow_management.md) - Detailed information about the Workflow Management tools
 - [Changeset Management](docs/changeset_management.md) - Detailed information about the Changeset Management tools
+## Test Setup & Execution
 
+### 1. __Install Test Dependencies__
+
+First, install the development dependencies which include pytest:
+
+```bash
+# Using pip
+pip install -e ".[dev]"
+
+# OR using uv (if available)
+uv pip install -e ".[dev]"
+```
+
+This installs:
+
+- `pytest` - Test framework
+- `pytest-cov` - Coverage reporting
+- `black`, `isort`, `ruff` - Code formatting/linting
+- `mypy` - Type checking
+
+### 2. __Run All Tests__
+
+```bash
+# Run all tests in the tests/ directory
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run with coverage report
+pytest --cov=servicenow_mcp --cov-report=html
+
+# Run with output (show print statements)
+pytest -s
+```
+
+### 3. __Run Specific Tests__
+
+```bash
+# Run a specific test file
+pytest tests/test_acl_tools.py
+
+# Run a specific test class
+pytest tests/test_acl_tools.py::TestListACLs
+
+# Run a specific test method
+pytest tests/test_acl_tools.py::TestListACLs::test_list_acls_success
+
+# Run tests matching a pattern
+pytest -k "acl"
+```
 ### Troubleshooting
 
 #### Common Errors with Change Management Tools

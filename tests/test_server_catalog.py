@@ -2,141 +2,202 @@
 Tests for the ServiceNow MCP server integration with catalog functionality.
 """
 
+import os
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from servicenow_mcp.server import ServiceNowMCP
-from servicenow_mcp.tools.catalog_tools import (
-    GetCatalogItemParams,
-    ListCatalogCategoriesParams,
-    ListCatalogItemsParams,
-)
-from servicenow_mcp.tools.catalog_tools import (
-    get_catalog_item as get_catalog_item_tool,
-)
-from servicenow_mcp.tools.catalog_tools import (
-    list_catalog_categories as list_catalog_categories_tool,
-)
-from servicenow_mcp.tools.catalog_tools import (
-    list_catalog_items as list_catalog_items_tool,
-)
+from servicenow_mcp.utils.config import AuthConfig, AuthType, BasicAuthConfig, ServerConfig
 
 
-class TestServerCatalog(unittest.TestCase):
+class TestServerCatalog(unittest.IsolatedAsyncioTestCase):
     """Test cases for the server integration with catalog functionality."""
 
     def setUp(self):
         """Set up test fixtures."""
-        # Create a mock config
-        self.config = {
-            "instance_url": "https://example.service-now.com",
-            "auth": {
-                "type": "basic",
-                "basic": {
-                    "username": "admin",
-                    "password": "password",
-                },
-            },
-        }
-
-        # Create a mock server
-        self.server = ServiceNowMCP(self.config)
-
-        # Mock the FastMCP server
-        self.server.mcp_server = MagicMock()
-        self.server.mcp_server.resource = MagicMock()
-        self.server.mcp_server.tool = MagicMock()
-
-    def test_register_catalog_resources(self):
-        """Test that catalog resources are registered correctly."""
-        # Call the method to register resources
-        self.server._register_resources()
-
-        # Check that the resource decorators were called
-        resource_calls = self.server.mcp_server.resource.call_args_list
-        resource_paths = [call[0][0] for call in resource_calls]
-
-        # Check that catalog resources are registered
-        self.assertIn("catalog://items", resource_paths)
-        self.assertIn("catalog://categories", resource_paths)
-        self.assertIn("catalog://{item_id}", resource_paths)
-
-    def test_register_catalog_tools(self):
-        """Test that catalog tools are registered correctly."""
-        # Call the method to register tools
-        self.server._register_tools()
-
-        # Check that the tool decorator was called
-        self.server.mcp_server.tool.assert_called()
-
-        # Get the tool functions
-        tool_calls = self.server.mcp_server.tool.call_args_list
+        # Set environment variable to load catalog tools
+        os.environ["MCP_TOOL_PACKAGE"] = "full"
         
-        # Instead of trying to extract names from the call args, just check that the decorator was called
-        # the right number of times (at least 3 times for the catalog tools)
-        self.assertGreaterEqual(len(tool_calls), 3)
+        # Create proper configuration objects
+        self.auth_config = AuthConfig(
+            type=AuthType.BASIC,
+            basic=BasicAuthConfig(username="test_user", password="test_password"),
+        )
+        self.server_config = ServerConfig(
+            instance_url="https://test.service-now.com",
+            auth=self.auth_config,
+        )
 
-    @patch("servicenow_mcp.tools.catalog_tools.list_catalog_items")
-    def test_list_catalog_items_tool(self, mock_list_catalog_items):
-        """Test the list_catalog_items tool."""
-        # Mock the tool function
-        mock_list_catalog_items.return_value = {
-            "success": True,
-            "message": "Retrieved 1 catalog items",
-            "items": [
+        # Create the server instance
+        self.server = ServiceNowMCP(self.server_config)
+
+    def tearDown(self):
+        """Tear down test fixtures."""
+        # Clean up environment variable
+        if "MCP_TOOL_PACKAGE" in os.environ:
+            del os.environ["MCP_TOOL_PACKAGE"]
+
+    def test_catalog_tools_in_tool_definitions(self):
+        """Test that catalog tools are included in tool definitions."""
+        # Check that catalog tools are in the tool definitions
+        catalog_tools = [
+            "list_catalog_items",
+            "get_catalog_item",
+            "list_catalog_categories",
+            "create_catalog_category",
+            "update_catalog_category",
+            "move_catalog_items",
+        ]
+        
+        for tool_name in catalog_tools:
+            self.assertIn(
+                tool_name,
+                self.server.tool_definitions,
+                f"Expected {tool_name} to be in tool definitions",
+            )
+
+    def test_catalog_tools_enabled_in_full_package(self):
+        """Test that catalog tools are enabled in the full package."""
+        # Check that catalog tools are enabled
+        catalog_tools = [
+            "list_catalog_items",
+            "get_catalog_item",
+            "list_catalog_categories",
+        ]
+        
+        for tool_name in catalog_tools:
+            self.assertIn(
+                tool_name,
+                self.server.enabled_tool_names,
+                f"Expected {tool_name} to be enabled in full package",
+            )
+
+    async def test_list_catalog_tools(self):
+        """Test listing catalog tools via the MCP server."""
+        # Get the list of tools
+        tools = await self.server._list_tools_impl()
+        
+        # Check that catalog tools are in the list
+        tool_names = [tool.name for tool in tools]
+        
+        self.assertIn("list_catalog_items", tool_names)
+        self.assertIn("get_catalog_item", tool_names)
+        self.assertIn("list_catalog_categories", tool_names)
+
+    @patch("servicenow_mcp.tools.catalog_tools.requests.get")
+    async def test_call_list_catalog_items(self, mock_get):
+        """Test calling the list_catalog_items tool."""
+        # Mock the HTTP response
+        mock_response = patch.object(mock_get, "return_value")
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            "result": [
                 {
                     "sys_id": "item1",
                     "name": "Laptop",
+                    "short_description": "Standard laptop",
+                    "category": "hardware",
+                    "price": "1000",
+                    "picture": "",
+                    "active": "true",
+                    "order": "100",
                 }
-            ],
+            ]
         }
+        mock_get.return_value.raise_for_status = lambda: None
 
-        # Register the tools
-        self.server._register_tools()
+        # Call the tool
+        result = await self.server._call_tool_impl(
+            "list_catalog_items",
+            {"category": None, "limit": 10},
+        )
 
-        # Check that the tool decorator was called
-        self.server.mcp_server.tool.assert_called()
+        # Verify the result
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].type, "text")
+        self.assertIn("item1", result[0].text)
+        self.assertIn("Laptop", result[0].text)
 
-    @patch("servicenow_mcp.tools.catalog_tools.get_catalog_item")
-    def test_get_catalog_item_tool(self, mock_get_catalog_item):
-        """Test the get_catalog_item tool."""
-        # Mock the tool function
-        mock_get_catalog_item.return_value = {
-            "success": True,
-            "message": "Retrieved catalog item: Laptop",
-            "data": {
-                "sys_id": "item1",
-                "name": "Laptop",
-            },
-        }
+    @patch("servicenow_mcp.tools.catalog_tools.requests.get")
+    async def test_call_get_catalog_item(self, mock_get):
+        """Test calling the get_catalog_item tool."""
+        # Mock the HTTP response for the main item
+        def side_effect(url, *args, **kwargs):
+            from unittest.mock import MagicMock
+            mock_response_obj = MagicMock()
+            mock_response_obj.status_code = 200
+            mock_response_obj.raise_for_status = MagicMock()
+            
+            if "sc_cat_item" in url and "item_option_new" not in url:
+                mock_response_obj.json.return_value = {
+                    "result": {
+                        "sys_id": "item1",
+                        "name": "Laptop",
+                        "short_description": "Standard laptop",
+                        "description": "A standard laptop",
+                        "category": "hardware",
+                        "price": "1000",
+                        "picture": "",
+                        "active": "true",
+                        "order": "100",
+                        "delivery_time": "3-5 days",
+                        "availability": "in stock",
+                    }
+                }
+            else:  # item_option_new for variables
+                mock_response_obj.json.return_value = {"result": []}
+            
+            return mock_response_obj
+        
+        mock_get.side_effect = side_effect
 
-        # Register the tools
-        self.server._register_tools()
+        # Call the tool
+        result = await self.server._call_tool_impl(
+            "get_catalog_item",
+            {"item_id": "item1"},
+        )
 
-        # Check that the tool decorator was called
-        self.server.mcp_server.tool.assert_called()
+        # Verify the result
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].type, "text")
+        self.assertIn("item1", result[0].text)
+        self.assertIn("Laptop", result[0].text)
 
-    @patch("servicenow_mcp.tools.catalog_tools.list_catalog_categories")
-    def test_list_catalog_categories_tool(self, mock_list_catalog_categories):
-        """Test the list_catalog_categories tool."""
-        # Mock the tool function
-        mock_list_catalog_categories.return_value = {
-            "success": True,
-            "message": "Retrieved 1 catalog categories",
-            "categories": [
+    @patch("servicenow_mcp.tools.catalog_tools.requests.get")
+    async def test_call_list_catalog_categories(self, mock_get):
+        """Test calling the list_catalog_categories tool."""
+        # Mock the HTTP response
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            "result": [
                 {
                     "sys_id": "cat1",
                     "title": "Hardware",
+                    "description": "Hardware category",
+                    "parent": "",
+                    "icon": "",
+                    "active": "true",
+                    "order": "100",
                 }
-            ],
+            ]
         }
+        mock_get.return_value.raise_for_status = lambda: None
 
-        # Register the tools
-        self.server._register_tools()
+        # Call the tool
+        result = await self.server._call_tool_impl(
+            "list_catalog_categories",
+            {"parent_category": None, "limit": 10},
+        )
 
-        # Check that the tool decorator was called
-        self.server.mcp_server.tool.assert_called()
+        # Verify the result
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].type, "text")
+        self.assertIn("cat1", result[0].text)
+        self.assertIn("Hardware", result[0].text)
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

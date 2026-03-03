@@ -443,15 +443,15 @@ class TestWorkflowTools(unittest.TestCase):
             "name": "New Activity",
             "activity_type": "approval",
             "description": "A new approval activity",
+            "workflow_version_id":"version123"
         }
         result = add_workflow_activity(self.auth_manager, self.server_config, params)
-
+        print(result)
         # Verify the result
         self.assertEqual(result["activity"]["sys_id"], "activity789")
         self.assertEqual(result["activity"]["name"], "New Activity")
-        self.assertEqual(result["workflow_id"], "workflow123")
-        self.assertEqual(result["version_id"], "version123")
-        self.assertEqual(result["message"], "Activity added successfully")
+        self.assertEqual(result["activity"]["workflow_version"], "version123")
+        self.assertEqual(result["message"], "Workflow activity added successfully")
 
     @patch("servicenow_mcp.tools.workflow_tools.requests.patch")
     def test_update_workflow_activity_success(self, mock_patch):
