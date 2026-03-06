@@ -130,6 +130,26 @@ agile_management:
   - update_project
   - list_projects
 
+customer_service:
+  # Case Management (read-only)
+  - list_cases
+  - get_case_by_number
+  - search_cases
+  # Reference Data
+  - list_accounts
+  - list_locations
+  - list_products
+  # Case Correlation
+  - get_cases_by_account
+  - get_cases_by_location
+  - get_cases_by_product
+  - get_cases_by_integration
+  # Case Detail
+  - get_case_history
+  # User Lookup
+  - get_user
+  - list_users
+
 system_administrator:
   # User Management
   - create_user
@@ -258,3 +278,16 @@ full:
   - create_project
   - update_project
   - list_projects
+  # Customer Service Cases
+  - list_cases
+  - get_case_by_number
+  - search_cases
+  # CSM Reference Data & Case Correlation
+  - list_accounts
+  - list_locations
+  - list_products
+  - get_cases_by_account
+  - get_cases_by_location
+  - get_cases_by_product
+  - get_cases_by_integration
+  - get_case_history

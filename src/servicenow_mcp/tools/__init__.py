@@ -39,6 +39,21 @@ from servicenow_mcp.tools.changeset_tools import (
     publish_changeset,
     update_changeset,
 )
+from servicenow_mcp.tools.case_tools import (
+    get_case_by_number,
+    list_cases,
+    search_cases,
+)
+from servicenow_mcp.tools.csm_tools import (
+    get_case_history,
+    get_cases_by_account,
+    get_cases_by_integration,
+    get_cases_by_location,
+    get_cases_by_product,
+    list_accounts,
+    list_locations,
+    list_products,
+)
 from servicenow_mcp.tools.incident_tools import (
     add_comment,
     create_incident,
@@ -224,6 +239,21 @@ __all__ = [
     "list_projects",
 
     
+    # Customer Service Case tools
+    "list_cases",
+    "get_case_by_number",
+    "search_cases",
+
+    # CSM tools (accounts, locations, products, case correlation)
+    "list_accounts",
+    "list_locations",
+    "list_products",
+    "get_cases_by_account",
+    "get_cases_by_location",
+    "get_cases_by_product",
+    "get_cases_by_integration",
+    "get_case_history",
+
     # Future tools
     # "create_problem",
     # "update_problem",

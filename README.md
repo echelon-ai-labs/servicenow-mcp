@@ -278,6 +278,27 @@ The default `config/tool_packages.yaml` includes the following role-based packag
 8. **remove_group_members** - Remove members from a group in ServiceNow
 9. **list_groups** - List groups with filtering options
 
+#### Customer Service Management (CSM) Tools
+
+##### Case Tools
+1. **list_cases** - List customer service cases with optional filters (state, priority, category, date range)
+2. **get_case_by_number** - Get a specific case by its CS number (e.g. CS0017600)
+3. **search_cases** - Full-text search across case descriptions
+
+##### Reference Data Tools
+4. **list_accounts** - List customer accounts from the customer_account table (with optional name filter)
+5. **list_locations** - List locations from cmn_location (with optional account/name filter)
+6. **list_products** - List sold products from sn_install_base_sold_product (with optional account/product filter)
+
+##### Case Correlation Tools
+7. **get_cases_by_account** - Find cases for a specific customer account (validates account exists first)
+8. **get_cases_by_location** - Find cases for a specific venue/location
+9. **get_cases_by_product** - Find cases involving a specific product type
+10. **get_cases_by_integration** - Find cases involving a specific integration vendor
+
+##### Case Detail Tools
+11. **get_case_history** - Get full comment and work note timeline for a case
+
 #### UI Policy Tools
 
 1. **create_ui_policy** - Creates a ServiceNow UI Policy, typically for a Catalog Item.
@@ -439,6 +460,16 @@ Below are some example natural language queries you can use with Claude to inter
 - "Find all active users in the system with 'doctor' in their title"
 - "Create a user that will act as an approver for the Radiology department"
 - "List all IT support groups in the system"
+
+#### Customer Service Management Examples
+- "Show me all customer accounts matching 'Acme Corp'"
+- "List locations for Global Industries"
+- "What products does Acme Corp have deployed?"
+- "Find all cases for Acme Corp from the last 30 days"
+- "Show me cases related to our Premium product from the past 12 weeks"
+- "Find cases involving payment integration issues"
+- "Get the full history and work notes for case CS0008423"
+- "How many cases have been opened for our downtown location this month?"
 
 #### UI Policy Examples
 - "Create a UI policy for the 'Software Request' item (sys_id: abc...) named 'Show Justification' that applies when 'software_cost' is greater than 100."
