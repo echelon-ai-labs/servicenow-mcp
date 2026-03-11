@@ -70,6 +70,17 @@ class AuthManager:
             headers[self.config.api_key.header_name] = self.config.api_key.api_key
         
         return headers
+
+    @staticmethod
+    def _extract_oauth_error_code(response: requests.Response) -> str:
+        """Extract a non-sensitive OAuth error code from a response."""
+        try:
+            payload = response.json()
+            if isinstance(payload, dict):
+                return payload.get("error", "unknown_error")
+        except ValueError:
+            pass
+        return "non_json_response"
     
     def _get_oauth_token(self):
         """
@@ -106,17 +117,22 @@ class AuthManager:
             "grant_type": "client_credentials"
         }
         
-        logger.info("Attempting client_credentials grant...")
+        logger.info("Attempting OAuth client_credentials grant")
         response = requests.post(token_url, headers=headers, data=data_client_credentials)
         
-        logger.info(f"client_credentials response status: {response.status_code}")
-        logger.info(f"client_credentials response body: {response.text}")
+        logger.info("OAuth client_credentials response status: %s", response.status_code)
         
         if response.status_code == 200:
             token_data = response.json()
             self.token = token_data.get("access_token")
             self.token_type = token_data.get("token_type", "Bearer")
             return
+
+        logger.warning(
+            "OAuth client_credentials grant failed: status=%s error=%s",
+            response.status_code,
+            self._extract_oauth_error_code(response),
+        )
 
         # Try password grant if client_credentials failed
         if oauth_config.username and oauth_config.password:
@@ -126,17 +142,22 @@ class AuthManager:
                 "password": oauth_config.password
             }
             
-            logger.info("Attempting password grant...")
+            logger.info("Attempting OAuth password grant")
             response = requests.post(token_url, headers=headers, data=data_password)
             
-            logger.info(f"password grant response status: {response.status_code}")
-            logger.info(f"password grant response body: {response.text}")
+            logger.info("OAuth password grant response status: %s", response.status_code)
             
             if response.status_code == 200:
                 token_data = response.json()
                 self.token = token_data.get("access_token")
                 self.token_type = token_data.get("token_type", "Bearer")
                 return
+
+            logger.warning(
+                "OAuth password grant failed: status=%s error=%s",
+                response.status_code,
+                self._extract_oauth_error_code(response),
+            )
 
         raise ValueError("Failed to get OAuth token using both client_credentials and password grants.")
     
