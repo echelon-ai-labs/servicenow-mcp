@@ -9,6 +9,7 @@ from servicenow_mcp.tools.catalog_optimization import (
 )
 from servicenow_mcp.tools.catalog_tools import (
     create_catalog_category,
+    create_catalog_item,
     get_catalog_item,
     list_catalog_categories,
     list_catalog_items,
@@ -126,6 +127,7 @@ __all__ = [
     "get_incident_by_number",
     
     # Catalog tools
+    "create_catalog_item",
     "list_catalog_items",
     "get_catalog_item",
     "list_catalog_categories",

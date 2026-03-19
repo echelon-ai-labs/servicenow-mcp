@@ -72,6 +72,18 @@ class UpdateCatalogCategoryParams(BaseModel):
     order: Optional[int] = Field(None, description="Order of the category")
 
 
+class CreateCatalogItemParams(BaseModel):
+    """Parameters for creating a new service catalog item."""
+
+    name: str = Field(..., description="Name of the catalog item")
+    short_description: str = Field(..., description="Short description of the catalog item")
+    description: Optional[str] = Field(None, description="Full description of the catalog item")
+    category: Optional[str] = Field(None, description="Category sys_id to place the item in")
+    price: Optional[str] = Field(None, description="Price of the catalog item")
+    active: bool = Field(True, description="Whether the catalog item is active")
+    order: Optional[int] = Field(None, description="Display order of the catalog item")
+
+
 class MoveCatalogItemsParams(BaseModel):
     """Parameters for moving catalog items between categories."""
     
@@ -303,6 +315,74 @@ def get_catalog_item_variables(
     except requests.exceptions.RequestException as e:
         logger.error(f"Error getting catalog item variables: {str(e)}")
         return []
+
+
+def create_catalog_item(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: CreateCatalogItemParams,
+) -> CatalogResponse:
+    """
+    Create a new service catalog item in ServiceNow.
+
+    Args:
+        config: Server configuration
+        auth_manager: Authentication manager
+        params: Parameters for creating a catalog item
+
+    Returns:
+        Response containing the result of the operation
+    """
+    logger.info(f"Creating new service catalog item: {params.name}")
+
+    url = f"{config.instance_url}/api/now/table/sc_cat_item"
+
+    body: Dict[str, Any] = {
+        "name": params.name,
+        "short_description": params.short_description,
+        "active": str(params.active).lower(),
+    }
+
+    if params.description is not None:
+        body["description"] = params.description
+    if params.category is not None:
+        body["category"] = params.category
+    if params.price is not None:
+        body["price"] = params.price
+    if params.order is not None:
+        body["order"] = str(params.order)
+
+    headers = auth_manager.get_headers()
+    headers["Accept"] = "application/json"
+    headers["Content-Type"] = "application/json"
+
+    try:
+        response = requests.post(url, headers=headers, json=body)
+        response.raise_for_status()
+
+        item = response.json().get("result", {})
+
+        return CatalogResponse(
+            success=True,
+            message=f"Created catalog item: {params.name}",
+            data={
+                "sys_id": item.get("sys_id", ""),
+                "name": item.get("name", ""),
+                "short_description": item.get("short_description", ""),
+                "category": item.get("category", ""),
+                "price": item.get("price", ""),
+                "active": item.get("active", ""),
+                "order": item.get("order", ""),
+            },
+        )
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error creating catalog item: {str(e)}")
+        return CatalogResponse(
+            success=False,
+            message=f"Error creating catalog item: {str(e)}",
+            data=None,
+        )
 
 
 def list_catalog_categories(

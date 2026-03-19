@@ -14,6 +14,7 @@ from servicenow_mcp.tools.catalog_optimization import (
 )
 from servicenow_mcp.tools.catalog_tools import (
     CreateCatalogCategoryParams,
+    CreateCatalogItemParams,
     GetCatalogItemParams,
     ListCatalogCategoriesParams,
     ListCatalogItemsParams,
@@ -22,6 +23,9 @@ from servicenow_mcp.tools.catalog_tools import (
 )
 from servicenow_mcp.tools.catalog_tools import (
     create_catalog_category as create_catalog_category_tool,
+)
+from servicenow_mcp.tools.catalog_tools import (
+    create_catalog_item as create_catalog_item_tool,
 )
 from servicenow_mcp.tools.catalog_tools import (
     get_catalog_item as get_catalog_item_tool,
@@ -463,6 +467,13 @@ def get_tool_definitions(
             str,  # Expects JSON string
             "Update a service catalog item.",
             "json",  # Tool returns Pydantic model
+        ),
+        "create_catalog_item": (
+            create_catalog_item_tool,
+            CreateCatalogItemParams,
+            str,
+            "Create a new service catalog item in ServiceNow",
+            "json_dict",
         ),
         # Catalog Variables
         "create_catalog_item_variable": (
