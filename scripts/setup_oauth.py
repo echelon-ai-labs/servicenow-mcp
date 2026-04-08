@@ -14,7 +14,6 @@ Usage:
 
 import os
 import sys
-import json
 import requests
 import base64
 from pathlib import Path

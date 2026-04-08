@@ -5,18 +5,20 @@ This module provides tools for managing changesets in ServiceNow.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Optional, Union
 
 import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
 from servicenow_mcp.utils.config import ServerConfig
+from servicenow_mcp.utils.helpers import (
+    get_headers as _get_headers,
+    get_instance_url as _get_instance_url,
+    unwrap_and_validate_params as _unwrap_and_validate_params,
+)
 
 logger = logging.getLogger(__name__)
-
-# Type variable for Pydantic models
-T = TypeVar('T', bound=BaseModel)
 
 
 class ListChangesetsParams(BaseModel):
@@ -76,117 +78,6 @@ class AddFileToChangesetParams(BaseModel):
     changeset_id: str = Field(..., description="Changeset ID or sys_id")
     file_path: str = Field(..., description="Path of the file to add")
     file_content: str = Field(..., description="Content of the file")
-
-
-def _unwrap_and_validate_params(
-    params: Union[Dict[str, Any], BaseModel], 
-    model_class: Type[T], 
-    required_fields: Optional[List[str]] = None
-) -> Dict[str, Any]:
-    """
-    Unwrap and validate parameters.
-
-    Args:
-        params: The parameters to unwrap and validate. Can be a dictionary or a Pydantic model.
-        model_class: The Pydantic model class to validate against.
-        required_fields: List of fields that must be present.
-
-    Returns:
-        A dictionary with success status and validated parameters or error message.
-    """
-    try:
-        # Handle case where params is already a Pydantic model
-        if isinstance(params, BaseModel):
-            # If it's already the correct model class, use it directly
-            if isinstance(params, model_class):
-                model_instance = params
-            # Otherwise, convert to dict and create new instance
-            else:
-                model_instance = model_class(**params.dict())
-        # Handle dictionary case
-        else:
-            # Create model instance
-            model_instance = model_class(**params)
-        
-        # Check required fields
-        if required_fields:
-            missing_fields = []
-            for field in required_fields:
-                if getattr(model_instance, field, None) is None:
-                    missing_fields.append(field)
-            
-            if missing_fields:
-                return {
-                    "success": False,
-                    "message": f"Missing required fields: {', '.join(missing_fields)}",
-                }
-        
-        return {
-            "success": True,
-            "params": model_instance,
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "message": f"Invalid parameters: {str(e)}",
-        }
-
-
-def _get_instance_url(auth_manager: AuthManager, server_config: ServerConfig) -> Optional[str]:
-    """
-    Get the instance URL from either auth_manager or server_config.
-
-    Args:
-        auth_manager: The authentication manager.
-        server_config: The server configuration.
-
-    Returns:
-        The instance URL or None if not found.
-    """
-    # Try to get instance_url from server_config
-    if hasattr(server_config, 'instance_url'):
-        return server_config.instance_url
-    
-    # Try to get instance_url from auth_manager
-    if hasattr(auth_manager, 'instance_url'):
-        return auth_manager.instance_url
-    
-    # If neither has instance_url, check if auth_manager is actually a ServerConfig
-    # and server_config is actually an AuthManager (parameters swapped)
-    if hasattr(server_config, 'get_headers') and not hasattr(auth_manager, 'get_headers'):
-        if hasattr(auth_manager, 'instance_url'):
-            return auth_manager.instance_url
-    
-    logger.error("Cannot find instance_url in either auth_manager or server_config")
-    return None
-
-
-def _get_headers(auth_manager: AuthManager, server_config: ServerConfig) -> Optional[Dict[str, str]]:
-    """
-    Get the headers from either auth_manager or server_config.
-
-    Args:
-        auth_manager: The authentication manager.
-        server_config: The server configuration.
-
-    Returns:
-        The headers or None if not found.
-    """
-    # Try to get headers from auth_manager
-    if hasattr(auth_manager, 'get_headers'):
-        return auth_manager.get_headers()
-    
-    # Try to get headers from server_config
-    if hasattr(server_config, 'get_headers'):
-        return server_config.get_headers()
-    
-    # If neither has get_headers, check if auth_manager is actually a ServerConfig
-    # and server_config is actually an AuthManager (parameters swapped)
-    if hasattr(server_config, 'get_headers') and not hasattr(auth_manager, 'get_headers'):
-        return server_config.get_headers()
-    
-    logger.error("Cannot find get_headers method in either auth_manager or server_config")
-    return None
 
 
 def list_changesets(

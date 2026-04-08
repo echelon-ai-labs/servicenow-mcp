@@ -11,7 +11,6 @@ from servicenow_mcp.auth.auth_manager import AuthManager
 from servicenow_mcp.tools.catalog_optimization import (
     OptimizationRecommendationsParams,
     UpdateCatalogItemParams,
-    _get_high_abandonment_items,
     _get_inactive_items,
     _get_low_usage_items,
     _get_poor_description_items,

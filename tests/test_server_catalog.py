@@ -6,20 +6,6 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from servicenow_mcp.server import ServiceNowMCP
-from servicenow_mcp.tools.catalog_tools import (
-    GetCatalogItemParams,
-    ListCatalogCategoriesParams,
-    ListCatalogItemsParams,
-)
-from servicenow_mcp.tools.catalog_tools import (
-    get_catalog_item as get_catalog_item_tool,
-)
-from servicenow_mcp.tools.catalog_tools import (
-    list_catalog_categories as list_catalog_categories_tool,
-)
-from servicenow_mcp.tools.catalog_tools import (
-    list_catalog_items as list_catalog_items_tool,
-)
 
 
 class TestServerCatalog(unittest.TestCase):

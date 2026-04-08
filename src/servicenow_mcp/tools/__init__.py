@@ -9,6 +9,7 @@ from servicenow_mcp.tools.catalog_optimization import (
 )
 from servicenow_mcp.tools.catalog_tools import (
     create_catalog_category,
+    create_catalog_item,
     get_catalog_item,
     list_catalog_categories,
     list_catalog_items,
@@ -113,6 +114,16 @@ from servicenow_mcp.tools.project_tools import (
     update_project,
     list_projects,
 )
+from servicenow_mcp.tools.sctask_tools import (
+    get_sctask,
+    list_sctasks,
+    update_sctask,
+)
+from servicenow_mcp.tools.time_card_tools import (
+    list_time_cards,
+    create_time_card,
+    update_time_card,
+)
 # from servicenow_mcp.tools.problem_tools import create_problem, update_problem
 # from servicenow_mcp.tools.request_tools import create_request, update_request
 
@@ -126,6 +137,7 @@ __all__ = [
     "get_incident_by_number",
     
     # Catalog tools
+    "create_catalog_item",
     "list_catalog_items",
     "get_catalog_item",
     "list_catalog_categories",
@@ -223,7 +235,16 @@ __all__ = [
     "update_project",
     "list_projects",
 
-    
+    # Service Catalog Task tools
+    "get_sctask",
+    "list_sctasks",
+    "update_sctask",
+
+    # Time Card tools
+    "list_time_cards",
+    "create_time_card",
+    "update_time_card",
+
     # Future tools
     # "create_problem",
     # "update_problem",

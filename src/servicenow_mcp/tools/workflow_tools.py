@@ -5,7 +5,6 @@ This module provides tools for viewing and managing workflows in ServiceNow.
 """
 
 import logging
-from datetime import datetime
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 import requests

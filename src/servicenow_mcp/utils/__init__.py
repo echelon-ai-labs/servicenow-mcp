@@ -10,6 +10,11 @@ from servicenow_mcp.utils.config import (
     OAuthConfig,
     ServerConfig,
 )
+from servicenow_mcp.utils.helpers import (
+    get_headers,
+    get_instance_url,
+    unwrap_and_validate_params,
+)
 
 __all__ = [
     "ApiKeyConfig",
@@ -18,4 +23,7 @@ __all__ = [
     "BasicAuthConfig",
     "OAuthConfig",
     "ServerConfig",
-] 
+    "get_headers",
+    "get_instance_url",
+    "unwrap_and_validate_params",
+]

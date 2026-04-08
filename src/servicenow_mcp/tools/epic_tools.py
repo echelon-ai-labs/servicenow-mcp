@@ -6,18 +6,21 @@ This module provides tools for managing epics in ServiceNow.
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Type, TypeVar
+from typing import Any, Dict, Optional
 
 import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
 from servicenow_mcp.utils.config import ServerConfig
+from servicenow_mcp.utils.helpers import (
+    get_headers as _get_headers,
+    get_instance_url as _get_instance_url,
+    unwrap_and_validate_params as _unwrap_and_validate_params,
+)
 
 logger = logging.getLogger(__name__)
 
-# Type variable for Pydantic models
-T = TypeVar('T', bound=BaseModel)
 
 class CreateEpicParams(BaseModel):
     """Parameters for creating an epic."""
@@ -52,107 +55,6 @@ class ListEpicsParams(BaseModel):
     timeframe: Optional[str] = Field(None, description="Filter by timeframe (upcoming, in-progress, completed)")
     query: Optional[str] = Field(None, description="Additional query string")
 
-
-def _unwrap_and_validate_params(params: Any, model_class: Type[T], required_fields: List[str] = None) -> Dict[str, Any]:
-    """
-    Helper function to unwrap and validate parameters.
-    
-    Args:
-        params: The parameters to unwrap and validate.
-        model_class: The Pydantic model class to validate against.
-        required_fields: List of required field names.
-        
-    Returns:
-        A tuple of (success, result) where result is either the validated parameters or an error message.
-    """
-    # Handle case where params might be wrapped in another dictionary
-    if isinstance(params, dict) and len(params) == 1 and "params" in params and isinstance(params["params"], dict):
-        logger.warning("Detected params wrapped in a 'params' key. Unwrapping...")
-        params = params["params"]
-    
-    # Handle case where params might be a Pydantic model object
-    if not isinstance(params, dict):
-        try:
-            # Try to convert to dict if it's a Pydantic model
-            logger.warning("Params is not a dictionary. Attempting to convert...")
-            params = params.dict() if hasattr(params, "dict") else dict(params)
-        except Exception as e:
-            logger.error(f"Failed to convert params to dictionary: {e}")
-            return {
-                "success": False,
-                "message": f"Invalid parameters format. Expected a dictionary, got {type(params).__name__}",
-            }
-    
-    # Validate required parameters are present
-    if required_fields:
-        for field in required_fields:
-            if field not in params:
-                return {
-                    "success": False,
-                    "message": f"Missing required parameter '{field}'",
-                }
-    
-    try:
-        # Validate parameters against the model
-        validated_params = model_class(**params)
-        return {
-            "success": True,
-            "params": validated_params,
-        }
-    except Exception as e:
-        logger.error(f"Error validating parameters: {e}")
-        return {
-            "success": False,
-            "message": f"Error validating parameters: {str(e)}",
-        }
-
-
-def _get_instance_url(auth_manager: AuthManager, server_config: ServerConfig) -> Optional[str]:
-    """
-    Helper function to get the instance URL from either server_config or auth_manager.
-    
-    Args:
-        auth_manager: The authentication manager.
-        server_config: The server configuration.
-        
-    Returns:
-        The instance URL if found, None otherwise.
-    """
-    if hasattr(server_config, 'instance_url'):
-        return server_config.instance_url
-    elif hasattr(auth_manager, 'instance_url'):
-        return auth_manager.instance_url
-    else:
-        logger.error("Cannot find instance_url in either server_config or auth_manager")
-        return None
-
-
-def _get_headers(auth_manager: Any, server_config: Any) -> Optional[Dict[str, str]]:
-    """
-    Helper function to get headers from either auth_manager or server_config.
-    
-    Args:
-        auth_manager: The authentication manager or object passed as auth_manager.
-        server_config: The server configuration or object passed as server_config.
-        
-    Returns:
-        The headers if found, None otherwise.
-    """
-    # Try to get headers from auth_manager
-    if hasattr(auth_manager, 'get_headers'):
-        return auth_manager.get_headers()
-    
-    # If auth_manager doesn't have get_headers, try server_config
-    if hasattr(server_config, 'get_headers'):
-        return server_config.get_headers()
-    
-    # If neither has get_headers, check if auth_manager is actually a ServerConfig
-    # and server_config is actually an AuthManager (parameters swapped)
-    if hasattr(server_config, 'get_headers') and not hasattr(auth_manager, 'get_headers'):
-        return server_config.get_headers()
-    
-    logger.error("Cannot find get_headers method in either auth_manager or server_config")
-    return None
 
 def create_epic(
     auth_manager: AuthManager,

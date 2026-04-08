@@ -29,7 +29,6 @@ from servicenow_mcp.tools.workflow_tools import (
     deactivate_workflow,
     add_workflow_activity,
     update_workflow_activity,
-    delete_workflow_activity,
     reorder_workflow_activities,
 )
 

@@ -5,7 +5,7 @@ This module provides tools for managing incidents in ServiceNow.
 """
 
 import logging
-from typing import Optional, List
+from typing import Optional
 
 import requests
 from pydantic import BaseModel, Field

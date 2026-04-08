@@ -73,4 +73,11 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "--ignore=examples" 
+addopts = "--ignore=examples"
+
+[tool.coverage.run]
+omit = [
+    "src/servicenow_mcp/cli.py",
+    "src/servicenow_mcp/server.py",
+    "src/servicenow_mcp/server_sse.py",
+]

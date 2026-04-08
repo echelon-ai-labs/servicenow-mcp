@@ -176,6 +176,9 @@ cython_debug/
 *.swp
 *.swo
 
+# macOS
+.DS_Store
+
 # Project specific
 .env.local
 .env.development

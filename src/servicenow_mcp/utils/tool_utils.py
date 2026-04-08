@@ -14,6 +14,7 @@ from servicenow_mcp.tools.catalog_optimization import (
 )
 from servicenow_mcp.tools.catalog_tools import (
     CreateCatalogCategoryParams,
+    CreateCatalogItemParams,
     GetCatalogItemParams,
     ListCatalogCategoriesParams,
     ListCatalogItemsParams,
@@ -22,6 +23,9 @@ from servicenow_mcp.tools.catalog_tools import (
 )
 from servicenow_mcp.tools.catalog_tools import (
     create_catalog_category as create_catalog_category_tool,
+)
+from servicenow_mcp.tools.catalog_tools import (
+    create_catalog_item as create_catalog_item_tool,
 )
 from servicenow_mcp.tools.catalog_tools import (
     get_catalog_item as get_catalog_item_tool,
@@ -337,6 +341,26 @@ from servicenow_mcp.tools.project_tools import (
     update_project as update_project_tool,
     list_projects as list_projects_tool,
 )
+from servicenow_mcp.tools.sctask_tools import (
+    GetSCTaskParams,
+    UpdateSCTaskParams,
+    ListSCTasksParams,
+)
+from servicenow_mcp.tools.sctask_tools import (
+    get_sctask as get_sctask_tool,
+    list_sctasks as list_sctasks_tool,
+    update_sctask as update_sctask_tool,
+)
+from servicenow_mcp.tools.time_card_tools import (
+    ListTimeCardsParams,
+    CreateTimeCardParams,
+    UpdateTimeCardParams,
+)
+from servicenow_mcp.tools.time_card_tools import (
+    list_time_cards as list_time_cards_tool,
+    create_time_card as create_time_card_tool,
+    update_time_card as update_time_card_tool,
+)
 
 # Define a type alias for the Pydantic models or dataclasses used for params
 ParamsModel = Type[Any]  # Use Type[Any] for broader compatibility initially
@@ -463,6 +487,13 @@ def get_tool_definitions(
             str,  # Expects JSON string
             "Update a service catalog item.",
             "json",  # Tool returns Pydantic model
+        ),
+        "create_catalog_item": (
+            create_catalog_item_tool,
+            CreateCatalogItemParams,
+            str,
+            "Create a new service catalog item in ServiceNow",
+            "json_dict",
         ),
         # Catalog Variables
         "create_catalog_item_variable": (
@@ -952,6 +983,50 @@ def get_tool_definitions(
             str,  # Expects JSON string
             "List projects from ServiceNow",
             "json",  # Tool returns list/dict
+        ),
+        # Service Catalog Task (SCTASK) Tools
+        "get_sctask": (
+            get_sctask_tool,
+            GetSCTaskParams,
+            str,
+            "Get a Service Catalog Task (SCTASK) by number from ServiceNow",
+            "json",
+        ),
+        "list_sctasks": (
+            list_sctasks_tool,
+            ListSCTasksParams,
+            str,
+            "List Service Catalog Tasks (SCTASKs) from ServiceNow",
+            "json",
+        ),
+        "update_sctask": (
+            update_sctask_tool,
+            UpdateSCTaskParams,
+            str,
+            "Update a Service Catalog Task (SCTASK) in ServiceNow",
+            "json",
+        ),
+        # Time Card Tools
+        "list_time_cards": (
+            list_time_cards_tool,
+            ListTimeCardsParams,
+            str,
+            "List time cards from ServiceNow, optionally filtered by task or user",
+            "json",
+        ),
+        "create_time_card": (
+            create_time_card_tool,
+            CreateTimeCardParams,
+            str,
+            "Create a new time card entry for a task in ServiceNow",
+            "json",
+        ),
+        "update_time_card": (
+            update_time_card_tool,
+            UpdateTimeCardParams,
+            str,
+            "Update an existing time card entry in ServiceNow",
+            "json",
         ),
     }
     return tool_definitions

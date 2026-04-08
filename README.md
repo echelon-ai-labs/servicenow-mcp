@@ -1,16 +1,39 @@
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/osomai-servicenow-mcp-badge.png)](https://mseep.ai/app/osomai-servicenow-mcp)
-
 # ServiceNow MCP Server
 
-A Model Completion Protocol (MCP) server implementation for ServiceNow, allowing Claude to interact with ServiceNow instances.
+[![CI](https://github.com/torkian/servicenow-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/torkian/servicenow-mcp/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/torkian/servicenow-mcp/actions/workflows/codeql.yml/badge.svg)](https://github.com/torkian/servicenow-mcp/actions/workflows/codeql.yml)
+[![codecov](https://codecov.io/gh/torkian/servicenow-mcp/graph/badge.svg)](https://codecov.io/gh/torkian/servicenow-mcp)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-258%20passed-brightgreen.svg)](https://github.com/torkian/servicenow-mcp/actions/workflows/ci.yml)
 
-<a href="https://glama.ai/mcp/servers/@osomai/servicenow-mcp">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/@osomai/servicenow-mcp/badge" alt="ServiceNow Server MCP server" />
-</a>
+A Model Completion Protocol (MCP) server implementation for ServiceNow, allowing AI assistants to interact with ServiceNow instances.
+
+> **This is a maintained fork of [echelon-ai-labs/servicenow-mcp](https://github.com/echelon-ai-labs/servicenow-mcp)** with active development, bug fixes, and new features.
+
+## What's New (v2.0)
+
+### New Tools
+- **Service Catalog Task (SCTASK) Management** — `get_sctask`, `list_sctasks`, `update_sctask` for managing service catalog tasks with state tracking, assignment, and time logging
+- **Time Card Management** — `list_time_cards`, `create_time_card`, `update_time_card` for tracking hours worked per day against tasks
+- **create_catalog_item** — Create new service catalog items (cherry-picked from upstream PR #60)
+
+### Bug Fixes
+- Fixed boolean logic bug in `update_sctask` where sys_id resolution always ran regardless of input format
+- Fixed Dockerfile not copying `config/` directory, which broke tool package loading in Docker
+- Fixed OAuth token response bodies being logged in plaintext (security fix, cherry-picked from upstream PR #59)
+- Commented out 11 ghost tools in `tool_packages.yaml` that were listed but had no implementation
+
+### Improvements
+- Added missing `sse_server_example.py` referenced in README
+- Added `.DS_Store` to `.gitignore` and removed tracked instances
+- Updated README with accurate tool listings and usage examples
+- Added `service_desk` and `agile_management` tool packages with SCTASK and time card support
+- Corrected workflow tools documentation (was listing non-existent tools)
 
 ## Overview
 
-This project implements an MCP server that enables Claude to connect to ServiceNow instances, retrieve data, and perform actions through the ServiceNow API. It serves as a bridge between Claude and ServiceNow, allowing for seamless integration.
+This project implements an MCP server that enables AI assistants to connect to ServiceNow instances, retrieve data, and perform actions through the ServiceNow API. It serves as a bridge between AI tools and ServiceNow, allowing for seamless integration.
 
 ## Features
 
@@ -18,8 +41,10 @@ This project implements an MCP server that enables Claude to connect to ServiceN
 - Query ServiceNow records and tables
 - Create, update, and delete ServiceNow records
 - Execute ServiceNow scripts and workflows
+- Manage service catalog tasks (SCTASKs) and time cards
 - Access and query the ServiceNow Service Catalog
 - Analyze and optimize the ServiceNow Service Catalog
+- Role-based tool packages for scoped access
 - Debug mode for troubleshooting
 - Support for both stdio and Server-Sent Events (SSE) communication
 
@@ -34,7 +59,7 @@ This project implements an MCP server that enables Claude to connect to ServiceN
 
 1. Clone this repository:
    ```
-   git clone https://github.com/echelon-ai-labs/servicenow-mcp.git
+   git clone https://github.com/torkian/servicenow-mcp.git
    cd servicenow-mcp
    ```
 
@@ -150,13 +175,13 @@ To manage the number of tools exposed to the language model (especially in envir
 
 The default `config/tool_packages.yaml` includes the following role-based packages:
 
--   `service_desk`: Tools for incident handling and basic user/knowledge lookup.
+-   `service_desk`: Tools for incident handling, service catalog tasks (SCTASKs), time cards, and basic user/knowledge lookup.
 -   `catalog_builder`: Tools for creating and managing service catalog items, categories, variables, and related scripting (UI Policies, User Criteria).
 -   `change_coordinator`: Tools for managing the change request lifecycle, including tasks and approvals.
 -   `knowledge_author`: Tools for creating and managing knowledge bases, categories, and articles.
 -   `platform_developer`: Tools for server-side scripting (Script Includes), workflow development, and deployment (Changesets).
 -   `system_administrator`: Tools for user/group management and viewing system logs.
--   `agile_management`: Tools for managing user stories, epics, scrum tasks, and projects.
+-   `agile_management`: Tools for managing user stories, epics, scrum tasks, projects, service catalog tasks (SCTASKs), and time cards.
 -   `full`: Includes all available tools (default).
 -   `none`: Includes no tools (except `list_tool_packages`).
 
@@ -175,6 +200,7 @@ The default `config/tool_packages.yaml` includes the following role-based packag
 3. **add_comment** - Add a comment to an incident in ServiceNow
 4. **resolve_incident** - Resolve an incident in ServiceNow
 5. **list_incidents** - List incidents from ServiceNow
+6. **get_incident_by_number** - Get a specific incident by its INC number
 
 #### Service Catalog Tools
 
@@ -187,7 +213,7 @@ The default `config/tool_packages.yaml` includes the following role-based packag
 7. **create_catalog_item_variable** - Create a new variable (form field) for a catalog item
 8. **list_catalog_item_variables** - List all variables for a catalog item
 9. **update_catalog_item_variable** - Update an existing variable for a catalog item
-10. **list_catalogs** - List service catalogs from ServiceNow
+10. **create_catalog_item** - Create a new service catalog item in ServiceNow
 
 #### Catalog Optimization Tools
 
@@ -229,13 +255,32 @@ The default `config/tool_packages.yaml` includes the following role-based packag
 2. **update_project** - Update an existing project in ServiceNow
 3. **list_projects** - List projects from ServiceNow with filtering options
 
+#### Service Catalog Task (SCTASK) Tools
+
+1. **get_sctask** - Get a Service Catalog Task by SCTASK number
+2. **list_sctasks** - List Service Catalog Tasks with optional filters
+3. **update_sctask** - Update a Service Catalog Task (state, assignment, time worked)
+
+#### Time Card Tools
+
+1. **list_time_cards** - List time cards, optionally filtered by task, user, or week
+2. **create_time_card** - Create a new time card entry with daily hour breakdowns
+3. **update_time_card** - Update an existing time card entry
+
 #### Workflow Management Tools
 
 1. **list_workflows** - List workflows from ServiceNow
-2. **get_workflow** - Get a specific workflow from ServiceNow
-3. **create_workflow** - Create a new workflow in ServiceNow
-4. **update_workflow** - Update an existing workflow in ServiceNow
-5. **delete_workflow** - Delete a workflow from ServiceNow
+2. **get_workflow_details** - Get detailed information about a specific workflow
+3. **list_workflow_versions** - List versions of a workflow
+4. **get_workflow_activities** - Get activities for a specific workflow
+5. **create_workflow** - Create a new workflow in ServiceNow
+6. **update_workflow** - Update an existing workflow in ServiceNow
+7. **activate_workflow** - Activate a workflow
+8. **deactivate_workflow** - Deactivate a workflow
+9. **add_workflow_activity** - Add a new activity to a workflow
+10. **update_workflow_activity** - Update an existing workflow activity
+11. **delete_workflow_activity** - Delete an activity from a workflow
+12. **reorder_workflow_activities** - Reorder activities in a workflow
 
 #### Script Include Management Tools
 
@@ -390,6 +435,19 @@ Below are some example natural language queries you can use with Claude to inter
 - "Update the 'Data Analytics Initiatives' project to set it as completed"
 - "List all projects in the 'Data Analytics' epic"
 
+#### SCTASK Examples
+- "Show me the details of SCTASK0525799"
+- "List all open SCTASKs assigned to me"
+- "List SCTASKs for the Desktop Support group"
+- "Update SCTASK0525799 to mark it as work in progress and log 2 hours"
+- "Close SCTASK0525799 with a note that the software was installed"
+
+#### Time Card Examples
+- "Show my time cards for this week"
+- "List time cards for SCTASK0525799"
+- "Create a time card for SCTASK0525799 with 8 hours on Monday and 4 hours on Tuesday"
+- "Update my time card to add 4 hours on Wednesday"
+
 #### Workflow Management Examples
 - "Show me all active workflows in ServiceNow"
 - "Get details about the incident approval workflow"
@@ -451,6 +509,7 @@ The repository includes example scripts that demonstrate how to use the tools:
 
 - **examples/catalog_optimization_example.py**: Demonstrates how to analyze and improve the ServiceNow Service Catalog
 - **examples/change_management_demo.py**: Shows how to create and manage change requests in ServiceNow
+- **examples/sse_server_example.py**: Demonstrates how to set up and run the SSE server
 
 ## Authentication Methods
 
@@ -520,6 +579,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+### Acknowledgments
+
+This project is a maintained fork of [echelon-ai-labs/servicenow-mcp](https://github.com/echelon-ai-labs/servicenow-mcp), originally created by 100x Technology Inc under the MIT License.
 
 ### License
 

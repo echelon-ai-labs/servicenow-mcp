@@ -11,7 +11,6 @@ from typing import Dict, Union
 import uvicorn
 from dotenv import load_dotenv
 from mcp.server import Server
-from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
 from starlette.applications import Starlette
 from starlette.requests import Request

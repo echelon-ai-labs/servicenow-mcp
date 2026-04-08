@@ -8,11 +8,10 @@ slow fulfillment times, and poor descriptions.
 
 import logging
 import random
-from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 import requests
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from servicenow_mcp.auth.auth_manager import AuthManager
 from servicenow_mcp.utils.config import ServerConfig

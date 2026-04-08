@@ -633,7 +633,7 @@ def list_articles(
             logger.error("Unexpected response format: %s", json_response)
             return {
                 "success": False,
-                "message": f"Unexpected response format",
+                "message": "Unexpected response format",
                 "articles": [],
                 "count": 0,
                 "limit": params.limit,
