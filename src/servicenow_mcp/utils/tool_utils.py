@@ -337,6 +337,12 @@ from servicenow_mcp.tools.project_tools import (
     update_project as update_project_tool,
     list_projects as list_projects_tool,
 )
+from servicenow_mcp.tools.table_tools import (
+    QueryTableParams,
+)
+from servicenow_mcp.tools.table_tools import (
+    query_table as query_table_tool,
+)
 
 # Define a type alias for the Pydantic models or dataclasses used for params
 ParamsModel = Type[Any]  # Use Type[Any] for broader compatibility initially
@@ -952,6 +958,14 @@ def get_tool_definitions(
             str,  # Expects JSON string
             "List projects from ServiceNow",
             "json",  # Tool returns list/dict
+        ),
+        # Generic Table Tools
+        "query_table": (
+            query_table_tool,
+            QueryTableParams,
+            Dict[str, Any],
+            "Query records from any ServiceNow table",
+            "raw_dict",
         ),
     }
     return tool_definitions

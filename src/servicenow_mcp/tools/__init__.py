@@ -113,6 +113,9 @@ from servicenow_mcp.tools.project_tools import (
     update_project,
     list_projects,
 )
+from servicenow_mcp.tools.table_tools import (
+    query_table,
+)
 # from servicenow_mcp.tools.problem_tools import create_problem, update_problem
 # from servicenow_mcp.tools.request_tools import create_request, update_request
 
@@ -222,6 +225,9 @@ __all__ = [
     "create_project",
     "update_project",
     "list_projects",
+
+    # Generic Table tools
+    "query_table",
 
     
     # Future tools

@@ -76,6 +76,8 @@ knowledge_author:
   - get_article
 
 platform_developer:
+  # Generic Table Access
+  - query_table
   # Script Includes
   - list_script_includes
   - get_script_include
@@ -131,6 +133,8 @@ agile_management:
   - list_projects
 
 system_administrator:
+  # Generic Table Access
+  - query_table
   # User Management
   - create_user
   - update_user
@@ -147,6 +151,8 @@ system_administrator:
   - get_syslog_entry
 
 full:
+  # Generic Table Access
+  - query_table
   # Incident Management
   - create_incident
   - update_incident

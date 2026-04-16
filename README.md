@@ -278,6 +278,10 @@ The default `config/tool_packages.yaml` includes the following role-based packag
 8. **remove_group_members** - Remove members from a group in ServiceNow
 9. **list_groups** - List groups with filtering options
 
+#### Generic Table Tools
+
+1. **query_table** - Query records from any ServiceNow table using `sysparm_query`, pagination, and field selection
+
 #### UI Policy Tools
 
 1. **create_ui_policy** - Creates a ServiceNow UI Policy, typically for a Catalog Item.
