@@ -345,11 +345,13 @@ from servicenow_mcp.tools.table_tools import (
 )
 from servicenow_mcp.tools.gail_tools import (
     CreateGailEngagementParams,
+    DeleteGailEngagementParams,
     UpdateGailEngagementParams,
     UpdateGailResourceParams,
 )
 from servicenow_mcp.tools.gail_tools import (
     create_gail_engagement as create_gail_engagement_tool,
+    delete_gail_engagement as delete_gail_engagement_tool,
     update_gail_engagement as update_gail_engagement_tool,
     update_gail_resource as update_gail_resource_tool,
 )
@@ -990,6 +992,13 @@ def get_tool_definitions(
             UpdateGailEngagementParams,
             Dict[str, Any],
             "Update an existing GAIL/BAIL engagement record on x_snc_gail_get_ai_engagement by sys_id. Partial update — only fields explicitly provided are modified; omitted/None fields are left alone. sys_id is the only required field. Empty string or empty list clears glide_list fields.",
+            "raw_dict",
+        ),
+        "delete_gail_engagement": (
+            delete_gail_engagement_tool,
+            DeleteGailEngagementParams,
+            Dict[str, Any],
+            "Delete an existing GAIL/BAIL engagement record on x_snc_gail_get_ai_engagement by sys_id. Destructive — the record is permanently removed. Takes only sys_id (32 lowercase hex characters). Does NOT cascade to related records on other tables. A pre-delete existence check is performed; if the record is already missing, returns a not-found error (status_code 404) rather than a silent success.",
             "raw_dict",
         ),
         "update_gail_resource": (

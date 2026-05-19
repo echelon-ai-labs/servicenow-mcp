@@ -200,6 +200,28 @@ class CreateGailEngagementParams(BaseModel):
         return v
 
 
+class DeleteGailEngagementParams(BaseModel):
+    """Parameters for deleting a GAIL engagement record.
+
+    Delete is sys_id-only. No other parameters are accepted.
+    """
+
+    sys_id: str = Field(
+        ..., description="sys_id of the engagement record to delete (32 hex characters)"
+    )
+
+    model_config = {"extra": "forbid"}
+
+    @field_validator("sys_id")
+    @classmethod
+    def validate_sys_id(cls, v: str) -> str:
+        if not _validate_sys_id(v):
+            raise ValueError(
+                f"Invalid sys_id: '{v}' (must be 32 lowercase hex characters)"
+            )
+        return v
+
+
 class UpdateGailEngagementParams(BaseModel):
     """Parameters for updating an existing GAIL engagement record.
 
@@ -648,6 +670,90 @@ def update_gail_engagement(
         return {
             "success": False,
             "error": f"Failed to update GAIL engagement: {str(e)}",
+        }
+
+
+def delete_gail_engagement(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: DeleteGailEngagementParams,
+) -> dict:
+    """
+    Delete an existing GAIL/BAIL engagement record on x_snc_gail_get_ai_engagement
+    by sys_id. Destructive — the record is permanently removed from the instance
+    (subject to ServiceNow's audit and recovery mechanisms). Related records on
+    other tables are not affected; only the engagement row is deleted.
+
+    Args:
+        config: Server configuration.
+        auth_manager: Authentication manager.
+        params: Parameters containing the sys_id of the record to delete.
+
+    Returns:
+        Dictionary with success status and sys_id.
+    """
+    api_url = f"{config.api_url}/table/{ENGAGEMENT_TABLE}/{params.sys_id}"
+
+    try:
+        # Pre-delete existence check — avoids silent 204 on already-deleted records
+        get_response = requests.get(
+            api_url,
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+
+        if get_response.status_code == 404:
+            return {
+                "success": False,
+                "error": "Engagement record not found",
+                "sys_id": params.sys_id,
+                "status_code": 404,
+            }
+
+        if not get_response.ok:
+            error_body = get_response.text
+            try:
+                error_body = get_response.json().get("error", {}).get("message", get_response.text)
+            except Exception:
+                pass
+            return {
+                "success": False,
+                "error": error_body,
+                "sys_id": params.sys_id,
+                "status_code": get_response.status_code,
+            }
+
+        # Record exists — issue the DELETE
+        response = requests.delete(
+            api_url,
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+
+        if not response.ok:
+            error_body = response.text
+            try:
+                error_body = response.json().get("error", {}).get("message", response.text)
+            except Exception:
+                pass
+            return {
+                "success": False,
+                "error": error_body,
+                "sys_id": params.sys_id,
+                "status_code": response.status_code,
+            }
+
+        return {
+            "success": True,
+            "sys_id": params.sys_id,
+            "deleted": True,
+        }
+
+    except requests.RequestException as e:
+        logger.error(f"Failed to delete GAIL engagement: {e}")
+        return {
+            "success": False,
+            "error": f"Failed to delete GAIL engagement: {str(e)}",
         }
 
 

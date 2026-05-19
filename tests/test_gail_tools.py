@@ -6,14 +6,17 @@ import unittest
 from datetime import date, datetime
 from unittest.mock import MagicMock, patch
 
+import requests
 from pydantic import ValidationError
 
 from servicenow_mcp.auth.auth_manager import AuthManager
 from servicenow_mcp.tools.gail_tools import (
     CreateGailEngagementParams,
+    DeleteGailEngagementParams,
     UpdateGailEngagementParams,
     UpdateGailResourceParams,
     create_gail_engagement,
+    delete_gail_engagement,
     update_gail_engagement,
     update_gail_resource,
     _normalize_date,
@@ -478,6 +481,153 @@ class TestUpdateGailEngagement(unittest.TestCase):
         sent_data = call_kwargs.kwargs.get("json") or call_kwargs[1].get("json")
         self.assertNotIn("customer_geo", sent_data)
         self.assertIn("notes_escalation_log", sent_data)
+
+
+class TestDeleteGailEngagement(unittest.TestCase):
+
+    def setUp(self):
+        self.auth_config = AuthConfig(
+            type=AuthType.BASIC,
+            basic=BasicAuthConfig(username="test", password="test"),
+        )
+        self.config = ServerConfig(
+            instance_url="https://bassamgail.service-now.com",
+            auth=self.auth_config,
+        )
+        self.auth_manager = MagicMock(spec=AuthManager)
+        self.auth_manager.get_headers.return_value = {
+            "Authorization": "Bearer FAKE_TOKEN"
+        }
+        self.valid_sys_id = "a" * 32
+
+    @patch("servicenow_mcp.tools.gail_tools.requests.delete")
+    @patch("servicenow_mcp.tools.gail_tools.requests.get")
+    def test_delete_happy_path(self, mock_get, mock_delete):
+        """Happy path: valid sys_id, record exists, DELETE returns 204."""
+        mock_get_response = MagicMock()
+        mock_get_response.ok = True
+        mock_get_response.status_code = 200
+        mock_get_response.json.return_value = {
+            "result": {"sys_id": self.valid_sys_id}
+        }
+        mock_get.return_value = mock_get_response
+
+        mock_delete_response = MagicMock()
+        mock_delete_response.ok = True
+        mock_delete_response.status_code = 204
+        mock_delete.return_value = mock_delete_response
+
+        params = DeleteGailEngagementParams(sys_id=self.valid_sys_id)
+        result = delete_gail_engagement(self.config, self.auth_manager, params)
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["deleted"])
+        self.assertEqual(result["sys_id"], self.valid_sys_id)
+
+        # Verify DELETE was issued to the correct URL
+        expected_url = f"https://bassamgail.service-now.com/api/now/table/x_snc_gail_get_ai_engagement/{self.valid_sys_id}"
+        mock_delete.assert_called_once()
+        self.assertEqual(mock_delete.call_args.args[0], expected_url)
+
+    def test_delete_invalid_sys_id_format(self):
+        """Invalid sys_id format: error before any HTTP call."""
+        with self.assertRaises(ValidationError):
+            DeleteGailEngagementParams(sys_id="not-a-real-sys-id")
+
+    def test_delete_sys_id_missing(self):
+        """sys_id missing entirely: Pydantic rejects."""
+        with self.assertRaises(ValidationError):
+            DeleteGailEngagementParams()
+
+    def test_delete_extra_parameter_rejected(self):
+        """Extra parameter rejected: model has extra='forbid'."""
+        with self.assertRaises(ValidationError):
+            DeleteGailEngagementParams(sys_id=self.valid_sys_id, force=True)
+
+    @patch("servicenow_mcp.tools.gail_tools.requests.delete")
+    @patch("servicenow_mcp.tools.gail_tools.requests.get")
+    def test_delete_record_not_found_pre_check(self, mock_get, mock_delete):
+        """Pre-check returns 404: DELETE is never issued."""
+        mock_get_response = MagicMock()
+        mock_get_response.ok = False
+        mock_get_response.status_code = 404
+        mock_get.return_value = mock_get_response
+
+        params = DeleteGailEngagementParams(sys_id=self.valid_sys_id)
+        result = delete_gail_engagement(self.config, self.auth_manager, params)
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["status_code"], 404)
+        self.assertEqual(result["error"], "Engagement record not found")
+        self.assertEqual(result["sys_id"], self.valid_sys_id)
+        mock_delete.assert_not_called()
+
+    @patch("servicenow_mcp.tools.gail_tools.requests.delete")
+    @patch("servicenow_mcp.tools.gail_tools.requests.get")
+    def test_delete_permission_error(self, mock_get, mock_delete):
+        """403 error propagates verbatim."""
+        mock_get_response = MagicMock()
+        mock_get_response.ok = False
+        mock_get_response.status_code = 403
+        mock_get_response.text = "ACL Exception: ..."
+        mock_get_response.json.return_value = {
+            "error": {"message": "ACL Exception: insufficient privileges to delete"}
+        }
+        mock_get.return_value = mock_get_response
+
+        params = DeleteGailEngagementParams(sys_id=self.valid_sys_id)
+        result = delete_gail_engagement(self.config, self.auth_manager, params)
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["status_code"], 403)
+        self.assertEqual(
+            result["error"],
+            "ACL Exception: insufficient privileges to delete",
+        )
+        mock_delete.assert_not_called()
+
+    @patch("servicenow_mcp.tools.gail_tools.requests.get")
+    def test_delete_network_error(self, mock_get):
+        """Network error: returns failure rather than crashing."""
+        mock_get.side_effect = requests.RequestException("Connection timed out")
+
+        params = DeleteGailEngagementParams(sys_id=self.valid_sys_id)
+        result = delete_gail_engagement(self.config, self.auth_manager, params)
+
+        self.assertFalse(result["success"])
+        self.assertIn("Connection timed out", result["error"])
+
+    def test_delete_uppercase_sys_id_rejected(self):
+        """Uppercase hex sys_id is rejected (must be lowercase per pattern)."""
+        with self.assertRaises(ValidationError):
+            DeleteGailEngagementParams(sys_id="A" * 32)
+
+    @patch("servicenow_mcp.tools.gail_tools.requests.delete")
+    @patch("servicenow_mcp.tools.gail_tools.requests.get")
+    def test_delete_fails_at_delete_step(self, mock_get, mock_delete):
+        """GET succeeds but DELETE returns 404 (race condition)."""
+        mock_get_response = MagicMock()
+        mock_get_response.ok = True
+        mock_get_response.status_code = 200
+        mock_get_response.json.return_value = {
+            "result": {"sys_id": self.valid_sys_id}
+        }
+        mock_get.return_value = mock_get_response
+
+        mock_delete_response = MagicMock()
+        mock_delete_response.ok = False
+        mock_delete_response.status_code = 404
+        mock_delete_response.text = "Record not found"
+        mock_delete_response.json.return_value = {
+            "error": {"message": "Record not found"}
+        }
+        mock_delete.return_value = mock_delete_response
+
+        params = DeleteGailEngagementParams(sys_id=self.valid_sys_id)
+        result = delete_gail_engagement(self.config, self.auth_manager, params)
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["status_code"], 404)
 
 
 class TestUpdateGailResource(unittest.TestCase):

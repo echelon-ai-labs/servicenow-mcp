@@ -119,6 +119,7 @@ from servicenow_mcp.tools.table_tools import (
 from servicenow_mcp.tools.gail_tools import (
     create_gail_engagement,
     update_gail_engagement,
+    delete_gail_engagement,
     update_gail_resource,
 )
 # from servicenow_mcp.tools.problem_tools import create_problem, update_problem
@@ -237,6 +238,7 @@ __all__ = [
     # GAIL/BAIL tools
     "create_gail_engagement",
     "update_gail_engagement",
+    "delete_gail_engagement",
     "update_gail_resource",
 
     # Future tools
