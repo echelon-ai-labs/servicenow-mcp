@@ -116,6 +116,11 @@ from servicenow_mcp.tools.project_tools import (
 from servicenow_mcp.tools.table_tools import (
     query_table,
 )
+from servicenow_mcp.tools.gail_tools import (
+    create_gail_engagement,
+    update_gail_engagement,
+    update_gail_resource,
+)
 # from servicenow_mcp.tools.problem_tools import create_problem, update_problem
 # from servicenow_mcp.tools.request_tools import create_request, update_request
 
@@ -229,7 +234,11 @@ __all__ = [
     # Generic Table tools
     "query_table",
 
-    
+    # GAIL/BAIL tools
+    "create_gail_engagement",
+    "update_gail_engagement",
+    "update_gail_resource",
+
     # Future tools
     # "create_problem",
     # "update_problem",

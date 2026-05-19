@@ -343,6 +343,16 @@ from servicenow_mcp.tools.table_tools import (
 from servicenow_mcp.tools.table_tools import (
     query_table as query_table_tool,
 )
+from servicenow_mcp.tools.gail_tools import (
+    CreateGailEngagementParams,
+    UpdateGailEngagementParams,
+    UpdateGailResourceParams,
+)
+from servicenow_mcp.tools.gail_tools import (
+    create_gail_engagement as create_gail_engagement_tool,
+    update_gail_engagement as update_gail_engagement_tool,
+    update_gail_resource as update_gail_resource_tool,
+)
 
 # Define a type alias for the Pydantic models or dataclasses used for params
 ParamsModel = Type[Any]  # Use Type[Any] for broader compatibility initially
@@ -965,6 +975,28 @@ def get_tool_definitions(
             QueryTableParams,
             Dict[str, Any],
             "Query records from any ServiceNow table",
+            "raw_dict",
+        ),
+        # GAIL/BAIL Tools
+        "create_gail_engagement": (
+            create_gail_engagement_tool,
+            CreateGailEngagementParams,
+            Dict[str, Any],
+            "Create a new GAIL/BAIL engagement record on x_snc_gail_get_ai_engagement",
+            "raw_dict",
+        ),
+        "update_gail_engagement": (
+            update_gail_engagement_tool,
+            UpdateGailEngagementParams,
+            Dict[str, Any],
+            "Update an existing GAIL/BAIL engagement record on x_snc_gail_get_ai_engagement by sys_id. Partial update — only fields explicitly provided are modified; omitted/None fields are left alone. sys_id is the only required field. Empty string or empty list clears glide_list fields.",
+            "raw_dict",
+        ),
+        "update_gail_resource": (
+            update_gail_resource_tool,
+            UpdateGailResourceParams,
+            Dict[str, Any],
+            "Update a GAIL/BAIL resource record on x_snc_gail_get_ai_resource",
             "raw_dict",
         ),
     }

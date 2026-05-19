@@ -282,6 +282,13 @@ The default `config/tool_packages.yaml` includes the following role-based packag
 
 1. **query_table** - Query records from any ServiceNow table using `sysparm_query`, pagination, and field selection
 
+#### GAIL/BAIL Engagement Tools
+
+1. **create_gail_engagement** - Create a new GAIL/BAIL engagement record on `x_snc_gail_get_ai_engagement`
+2. **update_gail_resource** - Update a GAIL/BAIL resource record on `x_snc_gail_get_ai_resource` (e.g. increment `bail_live_count`)
+
+These tools are available in the `gail` package (set `MCP_TOOL_PACKAGE=gail`) or the default `full` package.
+
 #### UI Policy Tools
 
 1. **create_ui_policy** - Creates a ServiceNow UI Policy, typically for a Catalog Item.

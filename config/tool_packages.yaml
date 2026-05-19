@@ -132,6 +132,12 @@ agile_management:
   - update_project
   - list_projects
 
+gail:
+  # GAIL/BAIL Engagement & Resource Management
+  - create_gail_engagement
+  - update_gail_engagement
+  - update_gail_resource
+
 system_administrator:
   # Generic Table Access
   - query_table
@@ -264,3 +270,7 @@ full:
   - create_project
   - update_project
   - list_projects
+  # GAIL/BAIL
+  - create_gail_engagement
+  - update_gail_engagement
+  - update_gail_resource
