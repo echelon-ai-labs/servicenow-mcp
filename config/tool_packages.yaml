@@ -136,6 +136,7 @@ gail:
   # GAIL/BAIL Engagement & Resource Management
   - create_gail_engagement
   - update_gail_engagement
+  - delete_gail_engagement
   - update_gail_resource
 
 system_administrator:
@@ -273,4 +274,5 @@ full:
   # GAIL/BAIL
   - create_gail_engagement
   - update_gail_engagement
+  - delete_gail_engagement
   - update_gail_resource
