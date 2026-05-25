@@ -47,6 +47,10 @@ from servicenow_mcp.tools.incident_tools import (
     update_incident,
     get_incident_by_number,
 )
+from servicenow_mcp.tools.incident_tagging_tools import (
+    classify_and_tag_incidents,
+    suggest_incident_tags,
+)
 from servicenow_mcp.tools.knowledge_base import (
     create_article,
     create_category,
@@ -124,6 +128,8 @@ __all__ = [
     "resolve_incident",
     "list_incidents",
     "get_incident_by_number",
+    "suggest_incident_tags",
+    "classify_and_tag_incidents",
     
     # Catalog tools
     "list_catalog_items",

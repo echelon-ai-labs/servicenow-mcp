@@ -39,6 +39,9 @@ dev = [
     "mypy>=1.0.0",
     "ruff>=0.0.1",
 ]
+session = [
+    "playwright>=1.40.0",
+]
 
 [project.scripts]
 servicenow-mcp = "servicenow_mcp.cli:main"

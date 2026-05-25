@@ -18,7 +18,9 @@ from servicenow_mcp.utils.config import (
     AuthType,
     BasicAuthConfig,
     OAuthConfig,
+    PkceConfig,
     ServerConfig,
+    SessionAuthConfig,
 )
 
 # Configure logging
@@ -56,7 +58,7 @@ def parse_args():
     auth_group = parser.add_argument_group("Authentication")
     auth_group.add_argument(
         "--auth-type",
-        choices=["basic", "oauth", "api_key"],
+        choices=["basic", "oauth", "api_key", "pkce", "session"],
         help="Authentication type",
         default=os.environ.get("SERVICENOW_AUTH_TYPE", "basic"),
     )
@@ -103,6 +105,46 @@ def parse_args():
         "--api-key-header",
         help="API key header name",
         default=os.environ.get("SERVICENOW_API_KEY_HEADER", "X-ServiceNow-API-Key"),
+    )
+
+    # PKCE / SSO
+    pkce_group = parser.add_argument_group("PKCE / SSO Authentication (browser one-time)")
+    pkce_group.add_argument(
+        "--pkce-client-id",
+        help="OAuth app Client ID registered in ServiceNow for browser-based SSO flow",
+        default=os.environ.get("SERVICENOW_CLIENT_ID"),
+    )
+    pkce_group.add_argument(
+        "--pkce-scopes",
+        help="OAuth scopes for the PKCE flow",
+        default=os.environ.get("SERVICENOW_PKCE_SCOPES", "useraccount"),
+    )
+    pkce_group.add_argument(
+        "--pkce-redirect-port",
+        type=int,
+        help="Local port for the PKCE OAuth callback (default: 9876)",
+        default=int(os.environ.get("SERVICENOW_PKCE_REDIRECT_PORT", "9876")),
+    )
+
+    # SESSION (browser SSO via Playwright)
+    session_group = parser.add_argument_group("Session Authentication (browser SSO via Playwright)")
+    session_group.add_argument(
+        "--session-headless",
+        action="store_true",
+        help="Run capture browser in headless mode (may not work with visual MFA)",
+        default=os.environ.get("SERVICENOW_SESSION_HEADLESS", "false").lower() == "true",
+    )
+    session_group.add_argument(
+        "--session-no-auto-refresh",
+        action="store_true",
+        help="Disable automatic browser re-capture when the session expires",
+        default=os.environ.get("SERVICENOW_SESSION_AUTO_REFRESH", "true").lower() == "false",
+    )
+    session_group.add_argument(
+        "--session-login-timeout",
+        type=int,
+        help="Timeout in seconds for the user to complete SSO+MFA login (default: 180)",
+        default=int(os.environ.get("SERVICENOW_SESSION_LOGIN_TIMEOUT", "180")),
     )
 
     # Script execution API resource path
@@ -207,6 +249,29 @@ def create_config(args) -> ServerConfig:
         )
         # Create the main AuthConfig wrapper
         final_auth_config = AuthConfig(type=auth_type, api_key=api_key_cfg)
+
+    elif auth_type == AuthType.PKCE:
+        pkce_client_id = getattr(args, "pkce_client_id", None) or os.getenv("SERVICENOW_CLIENT_ID")
+        if not pkce_client_id:
+            raise ValueError(
+                "Client ID is required for PKCE SSO "
+                "(--pkce-client-id or SERVICENOW_CLIENT_ID)"
+            )
+        pkce_cfg = PkceConfig(
+            client_id=pkce_client_id,
+            scopes=getattr(args, "pkce_scopes", "useraccount"),
+            redirect_port=getattr(args, "pkce_redirect_port", 9876),
+        )
+        final_auth_config = AuthConfig(type=auth_type, pkce=pkce_cfg)
+
+    elif auth_type == AuthType.SESSION:
+        session_cfg = SessionAuthConfig(
+            headless=getattr(args, "session_headless", False),
+            auto_refresh=not getattr(args, "session_no_auto_refresh", False),
+            login_timeout_s=getattr(args, "session_login_timeout", 180),
+        )
+        final_auth_config = AuthConfig(type=auth_type, session=session_cfg)
+
     else:
         # Should not happen if choices are enforced by argparse
         raise ValueError(f"Unsupported authentication type: {args.auth_type}")
@@ -242,8 +307,59 @@ async def arun_server(server_instance):
     logger.info("Stdio server finished.")
 
 
+def session_command(argv):
+    """'session' subcommand: manage browser SSO session cache."""
+    load_dotenv()
+    parser = argparse.ArgumentParser(prog="servicenow-mcp session")
+    parser.add_argument("action", choices=["login", "clear", "status"])
+    parser.add_argument(
+        "--instance-url",
+        default=os.environ.get("SERVICENOW_INSTANCE_URL"),
+    )
+    parser.add_argument("--headless", action="store_true")
+    parser.add_argument("--timeout", type=int, default=180)
+    args = parser.parse_args(argv)
+
+    from servicenow_mcp.auth.session_flow import (
+        capture_session,
+        clear_session_cache,
+        is_session_valid,
+        load_cached_session,
+        save_cached_session,
+    )
+
+    if args.action == "clear":
+        clear_session_cache()
+        print("Session cache removed.")
+        return
+
+    if not args.instance_url:
+        print("ERROR: --instance-url or SERVICENOW_INSTANCE_URL is required.")
+        sys.exit(1)
+
+    if args.action == "status":
+        cached = load_cached_session()
+        if not cached:
+            print("No cached session found.")
+            return
+        valid = is_session_valid(cached, args.instance_url)
+        print(f"Cached session: user_id={cached.get('user_id')} | valid={valid}")
+        return
+
+    # action == "login"
+    print(f"Opening browser for SSO login at {args.instance_url} ...")
+    data = capture_session(args.instance_url, headless=args.headless, timeout_s=args.timeout)
+    save_cached_session(data)
+    print(f"Session captured and saved. user_id={data.get('user_id')}")
+
+
 def main():
     """Main entry point for the CLI."""
+    # Optional subcommand: `servicenow-mcp session ...`
+    if len(sys.argv) > 1 and sys.argv[1] == "session":
+        session_command(sys.argv[2:])
+        return
+
     # Load environment variables from .env file
     load_dotenv()
 

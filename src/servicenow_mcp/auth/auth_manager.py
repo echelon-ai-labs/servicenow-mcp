@@ -36,6 +36,7 @@ class AuthManager:
         self.instance_url = instance_url
         self.token: Optional[str] = None
         self.token_type: Optional[str] = None
+        self._session_data: Optional[dict] = None
     
     def get_headers(self) -> Dict[str, str]:
         """
@@ -66,10 +67,75 @@ class AuthManager:
         elif self.config.type == AuthType.API_KEY:
             if not self.config.api_key:
                 raise ValueError("API key configuration is required")
-            
+
             headers[self.config.api_key.header_name] = self.config.api_key.api_key
-        
+
+        elif self.config.type == AuthType.PKCE:
+            if not self.config.pkce:
+                raise ValueError("PKCE configuration is required")
+            from servicenow_mcp.auth.pkce_flow import get_valid_token
+            access_token = get_valid_token(
+                instance_url=self.instance_url,
+                client_id=self.config.pkce.client_id,
+                scopes=self.config.pkce.scopes,
+                port=self.config.pkce.redirect_port,
+            )
+            headers["Authorization"] = f"Bearer {access_token}"
+
+        elif self.config.type == AuthType.SESSION:
+            session_data = self._get_session_data()
+            headers["X-UserToken"] = session_data.get("x_user_token", "")
+            cookies = session_data.get("cookies", {})
+            if cookies:
+                headers["Cookie"] = "; ".join(f"{k}={v}" for k, v in cookies.items())
+
         return headers
+
+    # ── Session helpers (browser SSO) ─────────────────────────────────────────
+
+    def _get_session_data(self, force_reauth: bool = False) -> dict:
+        """Lazy-load and cache the browser session data in memory."""
+        from servicenow_mcp.auth.session_flow import get_valid_session
+
+        if self._session_data is None or force_reauth:
+            session_cfg = self.config.session
+            headless = session_cfg.headless if session_cfg else False
+            auto_refresh = session_cfg.auto_refresh if session_cfg else True
+            self._session_data = get_valid_session(
+                instance_url=self.instance_url,
+                headless=headless,
+                force_reauth=force_reauth,
+                auto_refresh=auto_refresh,
+            )
+        return self._session_data
+
+    def get_cookies(self) -> dict:
+        """Return cookies dict for `requests` calls (empty for non-SESSION auth)."""
+        if self.config.type == AuthType.SESSION:
+            return self._get_session_data().get("cookies", {})
+        return {}
+
+    def make_request(self, method: str, url: str, **kwargs):
+        """
+        Wrapper around `requests.request` that injects auth headers/cookies and
+        auto-retries once on 401 by re-capturing the session (SESSION auth only).
+        """
+        headers = kwargs.pop("headers", {}) or {}
+        merged_headers = {**self.get_headers(), **headers}
+        cookies = kwargs.pop("cookies", None)
+        if cookies is None and self.config.type == AuthType.SESSION:
+            cookies = self.get_cookies()
+
+        response = requests.request(method, url, headers=merged_headers, cookies=cookies, **kwargs)
+
+        if response.status_code == 401 and self.config.type == AuthType.SESSION:
+            logger.warning("HTTP 401 - recapturing browser session and retrying.")
+            self._get_session_data(force_reauth=True)
+            merged_headers = {**self.get_headers(), **headers}
+            cookies = self.get_cookies()
+            response = requests.request(method, url, headers=merged_headers, cookies=cookies, **kwargs)
+
+        return response
     
     def _get_oauth_token(self):
         """

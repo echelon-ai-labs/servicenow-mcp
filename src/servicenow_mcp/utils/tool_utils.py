@@ -124,6 +124,10 @@ from servicenow_mcp.tools.incident_tools import (
     UpdateIncidentParams,
     GetIncidentByNumberParams,
 )
+from servicenow_mcp.tools.incident_tagging_tools import (
+    ClassifyAndTagIncidentsParams,
+    SuggestIncidentTagsParams,
+)
 from servicenow_mcp.tools.incident_tools import (
     add_comment as add_comment_tool,
 )
@@ -141,6 +145,10 @@ from servicenow_mcp.tools.incident_tools import (
 )
 from servicenow_mcp.tools.incident_tools import (
     get_incident_by_number as get_incident_by_number_tool,
+)
+from servicenow_mcp.tools.incident_tagging_tools import (
+    classify_and_tag_incidents as classify_and_tag_incidents_tool,
+    suggest_incident_tags as suggest_incident_tags_tool,
 )
 from servicenow_mcp.tools.knowledge_base import (
     CreateArticleParams,
@@ -337,6 +345,18 @@ from servicenow_mcp.tools.project_tools import (
     update_project as update_project_tool,
     list_projects as list_projects_tool,
 )
+from servicenow_mcp.tools.ui_internal_tools import (
+    UiCurrentUserParams,
+    UiGlobalSearchParams,
+    UiMyAssignedTasksParams,
+    UiMyGroupsParams,
+    UiUserPresenceParams,
+    ui_current_user as ui_current_user_tool,
+    ui_global_search as ui_global_search_tool,
+    ui_my_assigned_tasks as ui_my_assigned_tasks_tool,
+    ui_my_groups as ui_my_groups_tool,
+    ui_user_presence as ui_user_presence_tool,
+)
 
 # Define a type alias for the Pydantic models or dataclasses used for params
 ParamsModel = Type[Any]  # Use Type[Any] for broader compatibility initially
@@ -406,6 +426,20 @@ def get_tool_definitions(
             str,
             "Incident details from ServiceNow",
             "json_dict"
+        ),
+        "suggest_incident_tags": (
+            suggest_incident_tags_tool,
+            SuggestIncidentTagsParams,
+            str,
+            "Analyze incidents and suggest textual tags without writing markers.",
+            "str",
+        ),
+        "classify_and_tag_incidents": (
+            classify_and_tag_incidents_tool,
+            ClassifyAndTagIncidentsParams,
+            str,
+            "Analyze incidents and write real markers in ServiceNow.",
+            "str",
         ),
         # Catalog Tools
         "list_catalog_items": (
@@ -952,6 +986,42 @@ def get_tool_definitions(
             str,  # Expects JSON string
             "List projects from ServiceNow",
             "json",  # Tool returns list/dict
+        ),
+        # UI internal tools (require SERVICENOW_AUTH_TYPE=session)
+        "ui_global_search": (
+            ui_global_search_tool,
+            UiGlobalSearchParams,
+            str,
+            "ServiceNow global search (requires SESSION auth).",
+            "str",
+        ),
+        "ui_my_assigned_tasks": (
+            ui_my_assigned_tasks_tool,
+            UiMyAssignedTasksParams,
+            str,
+            "List tasks assigned to the logged-in user (requires SESSION auth).",
+            "str",
+        ),
+        "ui_my_groups": (
+            ui_my_groups_tool,
+            UiMyGroupsParams,
+            str,
+            "List groups where logged-in user is a member (requires SESSION auth).",
+            "str",
+        ),
+        "ui_user_presence": (
+            ui_user_presence_tool,
+            UiUserPresenceParams,
+            str,
+            "User presence status via internal UI endpoint (requires SESSION auth).",
+            "str",
+        ),
+        "ui_current_user": (
+            ui_current_user_tool,
+            UiCurrentUserParams,
+            str,
+            "Current logged-in user information (requires SESSION auth).",
+            "str",
         ),
     }
     return tool_definitions

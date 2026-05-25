@@ -16,6 +16,8 @@ service_desk:
   - resolve_incident
   - list_incidents
   - get_incident_by_number
+  - suggest_incident_tags
+  - classify_and_tag_incidents
   # User Lookup
   - get_user
   - list_users
@@ -154,6 +156,8 @@ full:
   - resolve_incident
   - list_incidents
   - get_incident_by_number
+  - suggest_incident_tags
+  - classify_and_tag_incidents
   # Catalog (Core)
   - list_catalogs
   - list_catalog_items
@@ -257,4 +261,9 @@ full:
   # Project Management
   - create_project
   - update_project
-  - list_projects
+  - list_projects  # UI Internal (requires SERVICENOW_AUTH_TYPE=session)
+  - ui_global_search
+  - ui_my_assigned_tasks
+  - ui_my_groups
+  - ui_user_presence
+  - ui_current_user

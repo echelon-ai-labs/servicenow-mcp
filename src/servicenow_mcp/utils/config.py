@@ -14,6 +14,8 @@ class AuthType(str, Enum):
     BASIC = "basic"
     OAUTH = "oauth"
     API_KEY = "api_key"
+    PKCE = "pkce"
+    SESSION = "session"
 
 
 class BasicAuthConfig(BaseModel):
@@ -40,6 +42,22 @@ class ApiKeyConfig(BaseModel):
     header_name: str = "X-ServiceNow-API-Key"
 
 
+class PkceConfig(BaseModel):
+    """Configuration for OAuth 2.0 PKCE (SSO browser flow)."""
+
+    client_id: str
+    scopes: str = "useraccount"
+    redirect_port: int = 9876
+
+
+class SessionAuthConfig(BaseModel):
+    """Configuration for browser-session auth (SSO via Playwright)."""
+
+    headless: bool = False
+    auto_refresh: bool = True
+    login_timeout_s: int = 180
+
+
 class AuthConfig(BaseModel):
     """Authentication configuration."""
 
@@ -47,6 +65,8 @@ class AuthConfig(BaseModel):
     basic: Optional[BasicAuthConfig] = None
     oauth: Optional[OAuthConfig] = None
     api_key: Optional[ApiKeyConfig] = None
+    pkce: Optional[PkceConfig] = None
+    session: Optional[SessionAuthConfig] = None
 
 
 class ServerConfig(BaseModel):

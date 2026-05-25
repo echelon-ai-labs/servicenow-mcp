@@ -53,6 +53,13 @@ This project implements an MCP server that enables Claude to connect to ServiceN
    SERVICENOW_AUTH_TYPE=basic  # or oauth, api_key
    ```
 
+## Security Best Practices
+
+- Use `.env.example` as the template and keep real credentials only in your local `.env`.
+- Never commit `.env`, API keys, passwords, or session tokens.
+- Rotate credentials immediately if they are exposed.
+- Before pushing, run a quick grep for known secrets and instance-specific domains.
+
 ## Usage
 
 ### Standard (stdio) Mode
