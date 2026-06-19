@@ -110,13 +110,15 @@ class AuthManager:
         response = requests.post(token_url, headers=headers, data=data_client_credentials)
         
         logger.info(f"client_credentials response status: {response.status_code}")
-        logger.info(f"client_credentials response body: {response.text}")
         
         if response.status_code == 200:
+            logger.info("client_credentials grant successful. Token retrieved.")
             token_data = response.json()
             self.token = token_data.get("access_token")
             self.token_type = token_data.get("token_type", "Bearer")
             return
+        else:
+            logger.error(f"client_credentials failed. Error: {response.text}")
 
         # Try password grant if client_credentials failed
         if oauth_config.username and oauth_config.password:
@@ -130,13 +132,15 @@ class AuthManager:
             response = requests.post(token_url, headers=headers, data=data_password)
             
             logger.info(f"password grant response status: {response.status_code}")
-            logger.info(f"password grant response body: {response.text}")
             
             if response.status_code == 200:
+                logger.info("password grant successful. Token retrieved.")
                 token_data = response.json()
                 self.token = token_data.get("access_token")
                 self.token_type = token_data.get("token_type", "Bearer")
                 return
+            else:
+                logger.error(f"password grant failed. Error: {response.text}")
 
         raise ValueError("Failed to get OAuth token using both client_credentials and password grants.")
     
