@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
 from servicenow_mcp.utils.config import ServerConfig
+from servicenow_mcp.utils.validators import is_valid_sys_id
 
 logger = logging.getLogger(__name__)
 
@@ -311,6 +312,12 @@ def get_changeset_details(
     
     validated_params = result["params"]
     
+    if not is_valid_sys_id(validated_params.changeset_id):
+        return {
+            "success": False,
+            "message": "Invalid changeset_id. Must be a 32-character hex string."
+        }
+    
     # Get the instance URL
     instance_url = _get_instance_url(auth_manager, server_config)
     if not instance_url:
@@ -473,6 +480,12 @@ def update_changeset(
         return result
     
     validated_params = result["params"]
+
+    if not is_valid_sys_id(validated_params.changeset_id):
+        return {
+            "success": False,
+            "message": "Invalid changeset_id. Must be a 32-character hex string."
+        }
     
     # Prepare the request data
     data = {}
@@ -562,6 +575,12 @@ def commit_changeset(
         return result
     
     validated_params = result["params"]
+
+    if not is_valid_sys_id(validated_params.changeset_id):
+        return {
+            "success": False,
+            "message": "Invalid changeset_id. Must be a 32-character hex string."
+        }
     
     # Prepare the request data
     data = {
@@ -640,6 +659,12 @@ def publish_changeset(
         return result
     
     validated_params = result["params"]
+
+    if not is_valid_sys_id(validated_params.changeset_id):
+        return {
+            "success": False,
+            "message": "Invalid changeset_id. Must be a 32-character hex string."
+        }
     
     # Get the instance URL
     instance_url = _get_instance_url(auth_manager, server_config)
@@ -718,6 +743,12 @@ def add_file_to_changeset(
         return result
     
     validated_params = result["params"]
+
+    if not is_valid_sys_id(validated_params.changeset_id):
+        return {
+            "success": False,
+            "message": "Invalid changeset_id. Must be a 32-character hex string."
+        }
     
     # Get the instance URL
     instance_url = _get_instance_url(auth_manager, server_config)

@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
 from servicenow_mcp.utils.config import ServerConfig
+from servicenow_mcp.utils.validators import is_valid_sys_id
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,6 @@ class UpdateChangeRequestParams(BaseModel):
     start_date: Optional[str] = Field(None, description="Planned start date (YYYY-MM-DD HH:MM:SS)")
     end_date: Optional[str] = Field(None, description="Planned end date (YYYY-MM-DD HH:MM:SS)")
     work_notes: Optional[str] = Field(None, description="Work notes to add to the change request")
-
 
 class ListChangeRequestsParams(BaseModel):
     """Parameters for listing change requests."""
@@ -257,6 +257,12 @@ def create_change_request(
         data["start_date"] = validated_params.start_date
     if validated_params.end_date:
         data["end_date"] = validated_params.end_date
+    
+    if not is_valid_sys_id(validated_params.changeset_id):
+        return {
+            "success": False,
+            "message": "Invalid changeset_id. Must be a 32-character hex string."
+        }
     
     # Get the instance URL
     instance_url = _get_instance_url(auth_manager, server_config)
