@@ -14,6 +14,7 @@ from servicenow_mcp.tools.knowledge_base import (
     CreateArticleParams,
     CreateCategoryParams,
     CreateKnowledgeBaseParams,
+    DeleteArticleParams,
     GetArticleParams,
     ListArticlesParams,
     ListKnowledgeBasesParams,
@@ -26,6 +27,7 @@ from servicenow_mcp.tools.knowledge_base import (
     create_article,
     create_category,
     create_knowledge_base,
+    delete_article,
     get_article,
     list_articles,
     list_knowledge_bases,
@@ -34,6 +36,9 @@ from servicenow_mcp.tools.knowledge_base import (
     list_categories,
 )
 from servicenow_mcp.utils.config import AuthConfig, AuthType, BasicAuthConfig, ServerConfig
+
+# 32-char hex sys_id: lets article tools skip the number->sys_id lookup.
+SYS_ID = "0123456789abcdef0123456789abcdef"
 
 
 class TestKnowledgeBaseTools(unittest.TestCase):
@@ -140,7 +145,9 @@ class TestKnowledgeBaseTools(unittest.TestCase):
         self.assertEqual(self.auth_manager.get_headers(), kwargs["headers"])
         self.assertEqual("Test Category", kwargs["json"]["label"])
         self.assertEqual("Test Category Description", kwargs["json"]["description"])
-        self.assertEqual("kb001", kwargs["json"]["kb_knowledge_base"])
+        # Categories link to the KB via parent_id + parent_table, not kb_knowledge_base.
+        self.assertEqual("kb001", kwargs["json"]["parent_id"])
+        self.assertEqual("kb_knowledge_base", kwargs["json"]["parent_table"])
         self.assertEqual("true", kwargs["json"]["active"])
 
     @patch("servicenow_mcp.tools.knowledge_base.requests.post")
@@ -212,7 +219,7 @@ class TestKnowledgeBaseTools(unittest.TestCase):
 
         # Call the method
         params = UpdateArticleParams(
-            article_id="art001",
+            article_id=SYS_ID,
             title="Updated Article",
             text="This is an updated article content",
             category="cat002",
@@ -222,51 +229,57 @@ class TestKnowledgeBaseTools(unittest.TestCase):
 
         # Verify the result
         self.assertTrue(result.success)
-        self.assertEqual("art001", result.article_id)
+        self.assertEqual(SYS_ID, result.article_id)
         self.assertEqual("Updated Article", result.article_title)
 
         # Verify the request
         mock_patch.assert_called_once()
         args, kwargs = mock_patch.call_args
-        self.assertEqual(f"{self.server_config.api_url}/table/kb_knowledge/art001", args[0])
+        self.assertEqual(f"{self.server_config.api_url}/table/kb_knowledge/{SYS_ID}", args[0])
         self.assertEqual(self.auth_manager.get_headers(), kwargs["headers"])
         self.assertEqual("Updated Article", kwargs["json"]["short_description"])
         self.assertEqual("This is an updated article content", kwargs["json"]["text"])
         self.assertEqual("cat002", kwargs["json"]["kb_category"])
         self.assertEqual("updated,article,knowledge", kwargs["json"]["keywords"])
 
+    @patch("servicenow_mcp.tools.knowledge_base.requests.get")
     @patch("servicenow_mcp.tools.knowledge_base.requests.patch")
-    def test_publish_article(self, mock_patch):
-        """Test publishing a knowledge article."""
-        # Mock response
+    def test_publish_article(self, mock_patch, mock_get):
+        """Test publishing a knowledge article (re-fetches the authoritative state)."""
+        # PATCH response
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "result": {
-                "sys_id": "art001",
+                "sys_id": SYS_ID,
                 "short_description": "Test Article",
                 "workflow_state": "published",
             }
         }
         mock_response.status_code = 200
         mock_patch.return_value = mock_response
+        # Re-fetch GET confirms the state actually stuck
+        get_resp = MagicMock()
+        get_resp.json.return_value = {"result": {"workflow_state": "published"}}
+        get_resp.status_code = 200
+        mock_get.return_value = get_resp
 
         # Call the method
         params = PublishArticleParams(
-            article_id="art001",
+            article_id=SYS_ID,
             workflow_state="published"
         )
         result = publish_article(self.server_config, self.auth_manager, params)
 
         # Verify the result
         self.assertTrue(result.success)
-        self.assertEqual("art001", result.article_id)
+        self.assertEqual(SYS_ID, result.article_id)
         self.assertEqual("Test Article", result.article_title)
         self.assertEqual("published", result.workflow_state)
 
         # Verify the request
         mock_patch.assert_called_once()
         args, kwargs = mock_patch.call_args
-        self.assertEqual(f"{self.server_config.api_url}/table/kb_knowledge/art001", args[0])
+        self.assertEqual(f"{self.server_config.api_url}/table/kb_knowledge/{SYS_ID}", args[0])
         self.assertEqual(self.auth_manager.get_headers(), kwargs["headers"])
         self.assertEqual("published", kwargs["json"]["workflow_state"])
 
@@ -360,7 +373,7 @@ class TestKnowledgeBaseTools(unittest.TestCase):
         mock_get.return_value = mock_response
 
         # Call the method
-        params = GetArticleParams(article_id="art001")
+        params = GetArticleParams(article_id=SYS_ID)
         result = get_article(self.server_config, self.auth_manager, params)
 
         # Verify the result
@@ -379,7 +392,7 @@ class TestKnowledgeBaseTools(unittest.TestCase):
         # Verify the request
         mock_get.assert_called_once()
         args, kwargs = mock_get.call_args
-        self.assertEqual(f"{self.server_config.api_url}/table/kb_knowledge/art001", args[0])
+        self.assertEqual(f"{self.server_config.api_url}/table/kb_knowledge/{SYS_ID}", args[0])
         self.assertEqual(self.auth_manager.get_headers(), kwargs["headers"])
         self.assertEqual("true", kwargs["params"]["sysparm_display_value"])
 
@@ -486,8 +499,8 @@ class TestKnowledgeBaseTools(unittest.TestCase):
                     "sys_id": "cat001",
                     "label": "Network Troubleshooting",
                     "description": "Articles for network troubleshooting",
-                    "kb_knowledge_base": {"display_value": "IT Knowledge Base"},
-                    "parent": {"display_value": ""},
+                    "parent_id": {"display_value": "IT Knowledge Base", "value": "kb001"},
+                    "parent_table": {"display_value": "kb_knowledge_base", "value": "kb_knowledge_base"},
                     "active": "true",
                     "sys_created_on": "2023-01-01 00:00:00",
                     "sys_updated_on": "2023-01-02 00:00:00",
@@ -496,8 +509,8 @@ class TestKnowledgeBaseTools(unittest.TestCase):
                     "sys_id": "cat002",
                     "label": "Software Setup",
                     "description": "Articles for software installation",
-                    "kb_knowledge_base": {"display_value": "IT Knowledge Base"},
-                    "parent": {"display_value": ""},
+                    "parent_id": {"display_value": "IT Knowledge Base", "value": "kb001"},
+                    "parent_table": {"display_value": "kb_knowledge_base", "value": "kb_knowledge_base"},
                     "active": "true",
                     "sys_created_on": "2023-01-03 00:00:00",
                     "sys_updated_on": "2023-01-04 00:00:00",
@@ -537,9 +550,24 @@ class TestKnowledgeBaseTools(unittest.TestCase):
         # Verify the query syntax contains the correct pattern
         self.assertIn("sysparm_query", kwargs["params"])
         query = kwargs["params"]["sysparm_query"]
-        self.assertIn("kb_knowledge_base.sys_id=kb001", query)
+        self.assertIn("parent_id=kb001^parent_table=kb_knowledge_base", query)
         self.assertIn("active=true", query)
         self.assertIn("labelLIKENetwork", query)
+
+    @patch("servicenow_mcp.tools.knowledge_base.requests.delete")
+    def test_delete_article(self, mock_delete):
+        """Test deleting a knowledge article."""
+        resp = MagicMock()
+        resp.status_code = 204
+        resp.raise_for_status = MagicMock()
+        mock_delete.return_value = resp
+
+        result = delete_article(self.server_config, self.auth_manager, DeleteArticleParams(article_id=SYS_ID))
+
+        self.assertTrue(result.success)
+        self.assertEqual(SYS_ID, result.article_id)
+        args, _ = mock_delete.call_args
+        self.assertEqual(f"{self.server_config.api_url}/table/kb_knowledge/{SYS_ID}", args[0])
 
 
 class TestKnowledgeBaseParams(unittest.TestCase):

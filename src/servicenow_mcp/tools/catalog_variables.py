@@ -11,6 +11,7 @@ import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
+from servicenow_mcp.utils.api import error_detail
 from servicenow_mcp.utils.config import ServerConfig
 
 logger = logging.getLogger(__name__)
@@ -147,7 +148,7 @@ def create_catalog_item_variable(
         logger.error(f"Failed to create catalog item variable: {e}")
         return CatalogItemVariableResponse(
             success=False,
-            message=f"Failed to create catalog item variable: {str(e)}",
+            message=f"Failed to create catalog item variable: {error_detail(e)}",
         )
 
 
@@ -209,7 +210,7 @@ def list_catalog_item_variables(
         logger.error(f"Failed to list catalog item variables: {e}")
         return ListCatalogItemVariablesResponse(
             success=False,
-            message=f"Failed to list catalog item variables: {str(e)}",
+            message=f"Failed to list catalog item variables: {error_detail(e)}",
         )
 
 
@@ -285,5 +286,5 @@ def update_catalog_item_variable(
         logger.error(f"Failed to update catalog item variable: {e}")
         return CatalogItemVariableResponse(
             success=False,
-            message=f"Failed to update catalog item variable: {str(e)}",
+            message=f"Failed to update catalog item variable: {error_detail(e)}",
         ) 

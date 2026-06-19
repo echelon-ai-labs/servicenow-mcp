@@ -12,6 +12,7 @@ import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
+from servicenow_mcp.utils.api import error_detail
 from servicenow_mcp.utils.config import ServerConfig
 
 logger = logging.getLogger(__name__)
@@ -203,7 +204,7 @@ def list_workflows(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     # Convert parameters to ServiceNow query format
     query_params = {
@@ -242,10 +243,10 @@ def list_workflows(
         }
     except requests.RequestException as e:
         logger.error(f"Error listing workflows: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error listing workflows: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def get_workflow_details(
@@ -271,7 +272,7 @@ def get_workflow_details(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     workflow_id = params.get("workflow_id")
     if not workflow_id:
@@ -291,10 +292,10 @@ def get_workflow_details(
         }
     except requests.RequestException as e:
         logger.error(f"Error getting workflow details: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error getting workflow details: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def list_workflow_versions(
@@ -321,7 +322,7 @@ def list_workflow_versions(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     workflow_id = params.get("workflow_id")
     if not workflow_id:
@@ -351,10 +352,10 @@ def list_workflow_versions(
         }
     except requests.RequestException as e:
         logger.error(f"Error listing workflow versions: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error listing workflow versions: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def get_workflow_activities(
@@ -381,7 +382,7 @@ def get_workflow_activities(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     workflow_id = params.get("workflow_id")
     if not workflow_id:
@@ -415,10 +416,10 @@ def get_workflow_activities(
             version_id = versions[0]["sys_id"]
         except requests.RequestException as e:
             logger.error(f"Error getting workflow version: {e}")
-            return {"error": str(e)}
+            return {"error": error_detail(e)}
         except Exception as e:
             logger.error(f"Unexpected error getting workflow version: {e}")
-            return {"error": str(e)}
+            return {"error": error_detail(e)}
     
     # Get activities for the version
     try:
@@ -441,10 +442,10 @@ def get_workflow_activities(
         }
     except requests.RequestException as e:
         logger.error(f"Error getting workflow activities: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error getting workflow activities: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def create_workflow(
@@ -471,7 +472,7 @@ def create_workflow(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     # Validate required parameters
     if not params.get("name"):
@@ -510,10 +511,10 @@ def create_workflow(
         }
     except requests.RequestException as e:
         logger.error(f"Error creating workflow: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error creating workflow: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def update_workflow(
@@ -540,7 +541,7 @@ def update_workflow(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     workflow_id = params.get("workflow_id")
     if not workflow_id:
@@ -583,10 +584,10 @@ def update_workflow(
         }
     except requests.RequestException as e:
         logger.error(f"Error updating workflow: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error updating workflow: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def activate_workflow(
@@ -613,7 +614,7 @@ def activate_workflow(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     workflow_id = params.get("workflow_id")
     if not workflow_id:
@@ -639,10 +640,10 @@ def activate_workflow(
         }
     except requests.RequestException as e:
         logger.error(f"Error activating workflow: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error activating workflow: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def deactivate_workflow(
@@ -669,7 +670,7 @@ def deactivate_workflow(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     workflow_id = params.get("workflow_id")
     if not workflow_id:
@@ -695,10 +696,10 @@ def deactivate_workflow(
         }
     except requests.RequestException as e:
         logger.error(f"Error deactivating workflow: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error deactivating workflow: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def add_workflow_activity(
@@ -725,7 +726,7 @@ def add_workflow_activity(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     # Validate required parameters
     workflow_version_id = params.get("workflow_version_id")
@@ -767,10 +768,10 @@ def add_workflow_activity(
         }
     except requests.RequestException as e:
         logger.error(f"Error adding workflow activity: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error adding workflow activity: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def update_workflow_activity(
@@ -797,7 +798,7 @@ def update_workflow_activity(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     activity_id = params.get("activity_id")
     if not activity_id:
@@ -834,10 +835,10 @@ def update_workflow_activity(
         }
     except requests.RequestException as e:
         logger.error(f"Error updating workflow activity: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error updating workflow activity: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def delete_workflow_activity(
@@ -864,7 +865,7 @@ def delete_workflow_activity(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     activity_id = params.get("activity_id")
     if not activity_id:
@@ -884,10 +885,10 @@ def delete_workflow_activity(
         }
     except requests.RequestException as e:
         logger.error(f"Error deleting workflow activity: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error deleting workflow activity: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def reorder_workflow_activities(
@@ -914,7 +915,7 @@ def reorder_workflow_activities(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     workflow_id = params.get("workflow_id")
     if not workflow_id:
@@ -949,7 +950,7 @@ def reorder_workflow_activities(
                 logger.error(f"Error updating activity order: {e}")
                 results.append({
                     "activity_id": activity_id,
-                    "error": str(e),
+                    "error": error_detail(e),
                     "success": False,
                 })
         
@@ -960,7 +961,7 @@ def reorder_workflow_activities(
         }
     except Exception as e:
         logger.error(f"Unexpected error reordering workflow activities: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
 
 
 def delete_workflow(
@@ -987,7 +988,7 @@ def delete_workflow(
         auth_manager, server_config = _get_auth_and_config(auth_manager, server_config)
     except ValueError as e:
         logger.error(f"Error getting auth and config: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     
     workflow_id = params.get("workflow_id")
     if not workflow_id:
@@ -1007,7 +1008,7 @@ def delete_workflow(
         }
     except requests.RequestException as e:
         logger.error(f"Error deleting workflow: {e}")
-        return {"error": str(e)}
+        return {"error": error_detail(e)}
     except Exception as e:
         logger.error(f"Unexpected error deleting workflow: {e}")
-        return {"error": str(e)} 
+        return {"error": error_detail(e)} 

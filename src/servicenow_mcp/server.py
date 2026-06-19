@@ -110,6 +110,15 @@ class ServiceNowMCP:
             create_kb_category_tool, list_kb_categories_tool
         )
 
+        # Surface package/registry drift: names listed in the active package that
+        # have no registered implementation are silently skipped otherwise.
+        missing = [n for n in self.enabled_tool_names if n not in self.tool_definitions]
+        if missing:
+            logger.warning(
+                f"Package '{self.current_package_name}' lists {len(missing)} tool(s) with no "
+                f"registered implementation; they will not be exposed: {missing}"
+            )
+
         self._register_handlers()
 
     def _register_handlers(self):
@@ -161,10 +170,15 @@ class ServiceNowMCP:
             self.current_package_name = requested_package
             logger.info(f"MCP_TOOL_PACKAGE set to '{self.current_package_name}'.")
         else:
-            self.current_package_name = "none"
+            # An unknown/typo'd package name previously fell back to 'none' (zero
+            # tools), which looks like "the server exposes nothing". Fall back to
+            # 'full' instead so a typo doesn't silently hide every tool.
+            fallback = "full" if "full" in self.package_definitions else "none"
+            self.current_package_name = fallback
             logger.warning(
                 f"MCP_TOOL_PACKAGE '{requested_package}' is not a valid package name. "
-                f"Valid packages: {list(self.package_definitions.keys())}. Loading 'none' package."
+                f"Valid packages: {list(self.package_definitions.keys())}. "
+                f"Falling back to '{fallback}'."
             )
 
         if self.package_definitions:
@@ -180,24 +194,24 @@ class ServiceNowMCP:
         """Implementation for the list_tools MCP endpoint."""
         tool_list: List[types.Tool] = []
 
-        # Add the introspection tool if not 'none' package
-        if self.current_package_name != "none":
-            tool_list.append(
-                types.Tool(
-                    name="list_tool_packages",
-                    description="Lists available tool packages and the currently loaded one.",
-                    inputSchema={
-                        "type": "object",
-                        "properties": {
-                            "random_string": {
-                                "type": "string",
-                                "description": "Dummy parameter for no-parameter tools",
-                            }
-                        },
-                        "required": ["random_string"],
+        # Always expose the introspection tool — including in the 'none' package —
+        # so a client can always discover which packages exist and switch.
+        tool_list.append(
+            types.Tool(
+                name="list_tool_packages",
+                description="Lists available tool packages and the currently loaded one.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "random_string": {
+                            "type": "string",
+                            "description": "Dummy parameter for no-parameter tools",
+                        }
                     },
-                )
+                    "required": ["random_string"],
+                },
             )
+        )
 
         # Iterate through defined tools and add enabled ones
         for tool_name, definition in self.tool_definitions.items():
@@ -236,12 +250,8 @@ class ServiceNowMCP:
             RuntimeError: If tool execution or serialization fails.
         """
         logger.info(f"Received call_tool request for tool '{name}'")
-        # Handle the introspection tool separately
+        # Handle the introspection tool separately (always available)
         if name == "list_tool_packages":
-            if self.current_package_name == "none":
-                raise ValueError(
-                    "Tool 'list_tool_packages' is not available in the 'none' package."
-                )
             result_dict = self._list_tool_packages_impl()
             serialized_string = json.dumps(result_dict, indent=2)
             # Return a list with a TextContent object

@@ -118,17 +118,33 @@ from servicenow_mcp.tools.changeset_tools import (
 )
 from servicenow_mcp.tools.incident_tools import (
     AddCommentParams,
+    CloseIncidentParams,
     CreateIncidentParams,
+    DeleteIncidentParams,
+    GetIncidentByNumberParams,
+    GetIncidentParams,
     ListIncidentsParams,
+    ReopenIncidentParams,
     ResolveIncidentParams,
     UpdateIncidentParams,
-    GetIncidentByNumberParams,
 )
 from servicenow_mcp.tools.incident_tools import (
     add_comment as add_comment_tool,
 )
 from servicenow_mcp.tools.incident_tools import (
+    close_incident as close_incident_tool,
+)
+from servicenow_mcp.tools.incident_tools import (
     create_incident as create_incident_tool,
+)
+from servicenow_mcp.tools.incident_tools import (
+    delete_incident as delete_incident_tool,
+)
+from servicenow_mcp.tools.incident_tools import (
+    get_incident as get_incident_tool,
+)
+from servicenow_mcp.tools.incident_tools import (
+    reopen_incident as reopen_incident_tool,
 )
 from servicenow_mcp.tools.incident_tools import (
     list_incidents as list_incidents_tool,
@@ -145,11 +161,15 @@ from servicenow_mcp.tools.incident_tools import (
 from servicenow_mcp.tools.knowledge_base import (
     CreateArticleParams,
     CreateKnowledgeBaseParams,
+    DeleteArticleParams,
     GetArticleParams,
     ListArticlesParams,
     ListKnowledgeBasesParams,
     PublishArticleParams,
     UpdateArticleParams,
+)
+from servicenow_mcp.tools.knowledge_base import (
+    delete_article as delete_article_tool,
 )
 from servicenow_mcp.tools.knowledge_base import (
     CreateCategoryParams as CreateKBCategoryParams,  # Aliased
@@ -207,10 +227,13 @@ from servicenow_mcp.tools.user_tools import (
     AddGroupMembersParams,
     CreateGroupParams,
     CreateUserParams,
+    DeleteGroupParams,
+    DeleteUserParams,
     GetUserParams,
     ListGroupsParams,
     ListUsersParams,
     RemoveGroupMembersParams,
+    SetPasswordParams,
     UpdateGroupParams,
     UpdateUserParams,
 )
@@ -222,6 +245,15 @@ from servicenow_mcp.tools.user_tools import (
 )
 from servicenow_mcp.tools.user_tools import (
     create_user as create_user_tool,
+)
+from servicenow_mcp.tools.user_tools import (
+    delete_group as delete_group_tool,
+)
+from servicenow_mcp.tools.user_tools import (
+    delete_user as delete_user_tool,
+)
+from servicenow_mcp.tools.user_tools import (
+    set_password as set_password_tool,
 )
 from servicenow_mcp.tools.user_tools import (
     get_user as get_user_tool,
@@ -247,6 +279,7 @@ from servicenow_mcp.tools.workflow_tools import (
     CreateWorkflowParams,
     DeactivateWorkflowParams,
     DeleteWorkflowActivityParams,
+    DeleteWorkflowParams,
     GetWorkflowActivitiesParams,
     GetWorkflowDetailsParams,
     ListWorkflowsParams,
@@ -257,6 +290,9 @@ from servicenow_mcp.tools.workflow_tools import (
 )
 from servicenow_mcp.tools.workflow_tools import (
     activate_workflow as activate_workflow_tool,
+)
+from servicenow_mcp.tools.workflow_tools import (
+    delete_workflow as delete_workflow_tool,
 )
 from servicenow_mcp.tools.workflow_tools import (
     add_workflow_activity as add_workflow_activity_tool,
@@ -406,6 +442,34 @@ def get_tool_definitions(
             str,
             "Incident details from ServiceNow",
             "json_dict"
+        ),
+        "get_incident": (
+            get_incident_tool,
+            GetIncidentParams,
+            str,  # Expects JSON string
+            "Get a single incident from ServiceNow by number or sys_id",
+            "json_dict",
+        ),
+        "delete_incident": (
+            delete_incident_tool,
+            DeleteIncidentParams,
+            str,
+            "Delete an incident in ServiceNow by number or sys_id",
+            "str",
+        ),
+        "close_incident": (
+            close_incident_tool,
+            CloseIncidentParams,
+            str,
+            "Close an incident in ServiceNow (state Closed). Requires close_code and close_notes.",
+            "str",
+        ),
+        "reopen_incident": (
+            reopen_incident_tool,
+            ReopenIncidentParams,
+            str,
+            "Reopen a resolved or closed incident in ServiceNow (state In Progress)",
+            "str",
         ),
         # Catalog Tools
         "list_catalog_items": (
@@ -628,6 +692,13 @@ def get_tool_definitions(
             "Reorder activities in a workflow",
             "str",  # Tool returns simple message
         ),
+        "delete_workflow": (
+            delete_workflow_tool,
+            DeleteWorkflowParams,
+            str,
+            "Delete a workflow in ServiceNow",
+            "json",
+        ),
         # Changeset Management Tools
         "list_changesets": (
             list_changesets_tool,
@@ -772,6 +843,13 @@ def get_tool_definitions(
             "Get a specific knowledge article by ID",
             "raw_dict",  # Tool returns raw dict
         ),
+        "delete_article": (
+            delete_article_tool,
+            DeleteArticleParams,
+            str,
+            "Delete a knowledge article by number or sys_id",
+            "str",
+        ),
         # Use the passed-in implementations for aliased KB category tools
         "list_categories": (
             list_kb_categories_tool_impl,  # Use passed function
@@ -843,6 +921,27 @@ def get_tool_definitions(
             Dict[str, Any],  # Expects dict
             "List groups from ServiceNow with optional filtering",
             "raw_dict",
+        ),
+        "set_password": (
+            set_password_tool,
+            SetPasswordParams,
+            str,
+            "Set (reset) a user's password in ServiceNow",
+            "str",
+        ),
+        "delete_user": (
+            delete_user_tool,
+            DeleteUserParams,
+            str,
+            "Delete a user in ServiceNow by sys_id, username, or email",
+            "str",
+        ),
+        "delete_group": (
+            delete_group_tool,
+            DeleteGroupParams,
+            str,
+            "Delete a group in ServiceNow by sys_id or name",
+            "str",
         ),
         # Story Management Tools
         "create_story": (

@@ -12,6 +12,7 @@ import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
+from servicenow_mcp.utils.api import error_detail
 from servicenow_mcp.utils.config import ServerConfig
 
 logger = logging.getLogger(__name__)
@@ -206,6 +207,29 @@ def _get_headers(auth_manager: Any, server_config: Any) -> Optional[Dict[str, st
     return None
 
 
+def _resolve_change_sys_id(instance_url: str, headers: Dict[str, str], change_id: str):
+    """Resolve a change number (e.g. CHG0030001) or sys_id to a sys_id.
+
+    The Table API record URL needs a sys_id, so passing a CHG number would
+    otherwise 404. Returns ``(sys_id, error_message)``.
+    """
+    if len(change_id) == 32 and all(c in "0123456789abcdef" for c in change_id):
+        return change_id, None
+    try:
+        r = requests.get(
+            f"{instance_url}/api/now/table/change_request",
+            params={"sysparm_query": f"number={change_id}", "sysparm_limit": 1, "sysparm_fields": "sys_id"},
+            headers=headers,
+        )
+        r.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        return None, f"Failed to find change request '{change_id}': {error_detail(e)}"
+    result = r.json().get("result", [])
+    if not result:
+        return None, f"Change request not found: {change_id}"
+    return result[0].get("sys_id"), None
+
+
 def create_change_request(
     auth_manager: AuthManager,
     server_config: ServerConfig,
@@ -295,7 +319,7 @@ def create_change_request(
         logger.error(f"Error creating change request: {e}")
         return {
             "success": False,
-            "message": f"Error creating change request: {str(e)}",
+            "message": f"Error creating change request: {error_detail(e)}",
         }
 
 
@@ -370,16 +394,21 @@ def update_change_request(
     
     # Add Content-Type header
     headers["Content-Type"] = "application/json"
-    
+
+    # Resolve change number/sys_id to a sys_id
+    sys_id, err = _resolve_change_sys_id(instance_url, headers, validated_params.change_id)
+    if err:
+        return {"success": False, "message": err}
+
     # Make the API request
-    url = f"{instance_url}/api/now/table/change_request/{validated_params.change_id}"
-    
+    url = f"{instance_url}/api/now/table/change_request/{sys_id}"
+
     try:
-        response = requests.put(url, json=data, headers=headers)
+        response = requests.patch(url, json=data, headers=headers)
         response.raise_for_status()
-        
+
         result = response.json()
-        
+
         return {
             "success": True,
             "message": "Change request updated successfully",
@@ -389,7 +418,7 @@ def update_change_request(
         logger.error(f"Error updating change request: {e}")
         return {
             "success": False,
-            "message": f"Error updating change request: {str(e)}",
+            "message": f"Error updating change request: {error_detail(e)}",
         }
 
 
@@ -495,7 +524,7 @@ def list_change_requests(
         logger.error(f"Error listing change requests: {e}")
         return {
             "success": False,
-            "message": f"Error listing change requests: {str(e)}",
+            "message": f"Error listing change requests: {error_detail(e)}",
         }
 
 
@@ -543,31 +572,36 @@ def get_change_request_details(
             "message": "Cannot find get_headers method in either auth_manager or server_config",
         }
     
+    # Resolve change number/sys_id to a sys_id
+    sys_id, err = _resolve_change_sys_id(instance_url, headers, validated_params.change_id)
+    if err:
+        return {"success": False, "message": err}
+
     # Make the API request
-    url = f"{instance_url}/api/now/table/change_request/{validated_params.change_id}"
-    
+    url = f"{instance_url}/api/now/table/change_request/{sys_id}"
+
     params = {
         "sysparm_display_value": "true",
     }
-    
+
     try:
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
-        
+
         result = response.json()
-        
+
         # Get tasks associated with this change request
         tasks_url = f"{instance_url}/api/now/table/change_task"
         tasks_params = {
-            "sysparm_query": f"change_request={validated_params.change_id}",
+            "sysparm_query": f"change_request={sys_id}",
             "sysparm_display_value": "true",
         }
-        
+
         tasks_response = requests.get(tasks_url, headers=headers, params=tasks_params)
         tasks_response.raise_for_status()
-        
+
         tasks_result = tasks_response.json()
-        
+
         return {
             "success": True,
             "change_request": result["result"],
@@ -577,7 +611,7 @@ def get_change_request_details(
         logger.error(f"Error getting change request details: {e}")
         return {
             "success": False,
-            "message": f"Error getting change request details: {str(e)}",
+            "message": f"Error getting change request details: {error_detail(e)}",
         }
 
 
@@ -643,16 +677,22 @@ def add_change_task(
     
     # Add Content-Type header
     headers["Content-Type"] = "application/json"
-    
+
+    # Resolve change number/sys_id to a sys_id for the change_request reference
+    sys_id, err = _resolve_change_sys_id(instance_url, headers, validated_params.change_id)
+    if err:
+        return {"success": False, "message": err}
+    data["change_request"] = sys_id
+
     # Make the API request
     url = f"{instance_url}/api/now/table/change_task"
-    
+
     try:
         response = requests.post(url, json=data, headers=headers)
         response.raise_for_status()
-        
+
         result = response.json()
-        
+
         return {
             "success": True,
             "message": "Change task added successfully",
@@ -662,7 +702,7 @@ def add_change_task(
         logger.error(f"Error adding change task: {e}")
         return {
             "success": False,
-            "message": f"Error adding change task: {str(e)}",
+            "message": f"Error adding change task: {error_detail(e)}",
         }
 
 
@@ -694,15 +734,6 @@ def submit_change_for_approval(
     
     validated_params = result["params"]
     
-    # Prepare the request data
-    data = {
-        "state": "assess",  # Set state to "assess" to submit for approval
-    }
-    
-    # Add approval comments if provided
-    if validated_params.approval_comments:
-        data["work_notes"] = validated_params.approval_comments
-    
     # Get the instance URL
     instance_url = _get_instance_url(auth_manager, server_config)
     if not instance_url:
@@ -710,7 +741,7 @@ def submit_change_for_approval(
             "success": False,
             "message": "Cannot find instance_url in either server_config or auth_manager",
         }
-    
+
     # Get the headers
     headers = _get_headers(auth_manager, server_config)
     if not headers:
@@ -718,40 +749,35 @@ def submit_change_for_approval(
             "success": False,
             "message": "Cannot find get_headers method in either auth_manager or server_config",
         }
-    
-    # Add Content-Type header
     headers["Content-Type"] = "application/json"
-    
-    # Make the API request
-    url = f"{instance_url}/api/now/table/change_request/{validated_params.change_id}"
-    
+
+    # Resolve change number/sys_id to a sys_id
+    sys_id, err = _resolve_change_sys_id(instance_url, headers, validated_params.change_id)
+    if err:
+        return {"success": False, "message": err}
+
+    # Request approval via the change's `approval` field. Change *state*
+    # transitions are governed by the Change Model state machine and cannot be
+    # driven directly through the Table API, but `approval` is writable.
+    data = {"approval": "requested"}
+    if validated_params.approval_comments:
+        data["work_notes"] = validated_params.approval_comments
+
+    url = f"{instance_url}/api/now/table/change_request/{sys_id}"
+
     try:
         response = requests.patch(url, json=data, headers=headers)
         response.raise_for_status()
-        
-        # Now, create an approval request
-        approval_url = f"{instance_url}/api/now/table/sysapproval_approver"
-        approval_data = {
-            "document_id": validated_params.change_id,
-            "source_table": "change_request",
-            "state": "requested",
-        }
-        
-        approval_response = requests.post(approval_url, json=approval_data, headers=headers)
-        approval_response.raise_for_status()
-        
-        approval_result = approval_response.json()
-        
         return {
             "success": True,
-            "message": "Change request submitted for approval successfully",
-            "approval": approval_result["result"],
+            "message": "Change request submitted for approval (approval set to 'requested')",
+            "change_request": response.json().get("result"),
         }
     except requests.exceptions.RequestException as e:
         logger.error(f"Error submitting change for approval: {e}")
         return {
             "success": False,
-            "message": f"Error submitting change for approval: {str(e)}",
+            "message": f"Error submitting change for approval: {error_detail(e)}",
         }
 
 
@@ -799,61 +825,51 @@ def approve_change(
             "message": "Cannot find get_headers method in either auth_manager or server_config",
         }
     
-    # First, find the approval record
-    approval_query_url = f"{instance_url}/api/now/table/sysapproval_approver"
-    
-    query_params = {
-        "sysparm_query": f"document_id={validated_params.change_id}",
-        "sysparm_limit": 1,
-    }
-    
+    headers["Content-Type"] = "application/json"
+
+    # Resolve change number/sys_id to a sys_id
+    sys_id, err = _resolve_change_sys_id(instance_url, headers, validated_params.change_id)
+    if err:
+        return {"success": False, "message": err}
+
+    # Best effort: approve any pending approval records for this change.
     try:
-        approval_response = requests.get(approval_query_url, headers=headers, params=query_params)
-        approval_response.raise_for_status()
-        
-        approval_result = approval_response.json()
-        
-        if not approval_result.get("result") or len(approval_result["result"]) == 0:
-            return {
-                "success": False,
-                "message": "No approval record found for this change request",
-            }
-        
-        approval_id = approval_result["result"][0]["sys_id"]
-        
-        # Now, update the approval record to approved
-        approval_update_url = f"{instance_url}/api/now/table/sysapproval_approver/{approval_id}"
-        headers["Content-Type"] = "application/json"
-        
-        approval_data = {
-            "state": "approved",
-        }
-        
-        if validated_params.approval_comments:
-            approval_data["comments"] = validated_params.approval_comments
-        
-        approval_update_response = requests.patch(approval_update_url, json=approval_data, headers=headers)
-        approval_update_response.raise_for_status()
-        
-        # Finally, update the change request state to "implement"
-        change_url = f"{instance_url}/api/now/table/change_request/{validated_params.change_id}"
-        
-        change_data = {
-            "state": "implement",  # This may vary depending on ServiceNow configuration
-        }
-        
-        change_response = requests.patch(change_url, json=change_data, headers=headers)
-        change_response.raise_for_status()
-        
+        appr = requests.get(
+            f"{instance_url}/api/now/table/sysapproval_approver",
+            headers=headers,
+            params={"sysparm_query": f"document_id={sys_id}^state=requested", "sysparm_fields": "sys_id"},
+        )
+        for rec in (appr.json().get("result", []) if appr.ok else []):
+            rec_data = {"state": "approved"}
+            if validated_params.approval_comments:
+                rec_data["comments"] = validated_params.approval_comments
+            requests.patch(
+                f"{instance_url}/api/now/table/sysapproval_approver/{rec['sys_id']}",
+                json=rec_data, headers=headers,
+            )
+    except requests.exceptions.RequestException:
+        pass  # fall back to the change's approval field below
+
+    # Authoritative: set the change's approval field to approved.
+    data = {"approval": "approved"}
+    if validated_params.approval_comments:
+        data["work_notes"] = validated_params.approval_comments
+
+    try:
+        response = requests.patch(
+            f"{instance_url}/api/now/table/change_request/{sys_id}", json=data, headers=headers
+        )
+        response.raise_for_status()
         return {
             "success": True,
-            "message": "Change request approved successfully",
+            "message": "Change request approved (approval set to 'approved')",
+            "change_request": response.json().get("result"),
         }
     except requests.exceptions.RequestException as e:
         logger.error(f"Error approving change: {e}")
         return {
             "success": False,
-            "message": f"Error approving change: {str(e)}",
+            "message": f"Error approving change: {error_detail(e)}",
         }
 
 
@@ -901,58 +917,48 @@ def reject_change(
             "message": "Cannot find get_headers method in either auth_manager or server_config",
         }
     
-    # First, find the approval record
-    approval_query_url = f"{instance_url}/api/now/table/sysapproval_approver"
-    
-    query_params = {
-        "sysparm_query": f"document_id={validated_params.change_id}",
-        "sysparm_limit": 1,
-    }
-    
+    headers["Content-Type"] = "application/json"
+
+    # Resolve change number/sys_id to a sys_id
+    sys_id, err = _resolve_change_sys_id(instance_url, headers, validated_params.change_id)
+    if err:
+        return {"success": False, "message": err}
+
+    # Best effort: reject any pending approval records for this change.
     try:
-        approval_response = requests.get(approval_query_url, headers=headers, params=query_params)
-        approval_response.raise_for_status()
-        
-        approval_result = approval_response.json()
-        
-        if not approval_result.get("result") or len(approval_result["result"]) == 0:
-            return {
-                "success": False,
-                "message": "No approval record found for this change request",
-            }
-        
-        approval_id = approval_result["result"][0]["sys_id"]
-        
-        # Now, update the approval record to rejected
-        approval_update_url = f"{instance_url}/api/now/table/sysapproval_approver/{approval_id}"
-        headers["Content-Type"] = "application/json"
-        
-        approval_data = {
-            "state": "rejected",
-            "comments": validated_params.rejection_reason,
-        }
-        
-        approval_update_response = requests.patch(approval_update_url, json=approval_data, headers=headers)
-        approval_update_response.raise_for_status()
-        
-        # Finally, update the change request state to "canceled"
-        change_url = f"{instance_url}/api/now/table/change_request/{validated_params.change_id}"
-        
-        change_data = {
-            "state": "canceled",  # This may vary depending on ServiceNow configuration
-            "work_notes": f"Change request rejected: {validated_params.rejection_reason}",
-        }
-        
-        change_response = requests.patch(change_url, json=change_data, headers=headers)
-        change_response.raise_for_status()
-        
+        appr = requests.get(
+            f"{instance_url}/api/now/table/sysapproval_approver",
+            headers=headers,
+            params={"sysparm_query": f"document_id={sys_id}^state=requested", "sysparm_fields": "sys_id"},
+        )
+        for rec in (appr.json().get("result", []) if appr.ok else []):
+            requests.patch(
+                f"{instance_url}/api/now/table/sysapproval_approver/{rec['sys_id']}",
+                json={"state": "rejected", "comments": validated_params.rejection_reason},
+                headers=headers,
+            )
+    except requests.exceptions.RequestException:
+        pass  # fall back to the change's approval field below
+
+    # Authoritative: set the change's approval field to rejected.
+    data = {
+        "approval": "rejected",
+        "work_notes": f"Change request rejected: {validated_params.rejection_reason}",
+    }
+
+    try:
+        response = requests.patch(
+            f"{instance_url}/api/now/table/change_request/{sys_id}", json=data, headers=headers
+        )
+        response.raise_for_status()
         return {
             "success": True,
-            "message": "Change request rejected successfully",
+            "message": "Change request rejected (approval set to 'rejected')",
+            "change_request": response.json().get("result"),
         }
     except requests.exceptions.RequestException as e:
         logger.error(f"Error rejecting change: {e}")
         return {
             "success": False,
-            "message": f"Error rejecting change: {str(e)}",
+            "message": f"Error rejecting change: {error_detail(e)}",
         } 

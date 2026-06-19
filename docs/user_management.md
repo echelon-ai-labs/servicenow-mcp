@@ -11,17 +11,24 @@ The User Management tools allow you to create, update, and manage users and grou
 ### User Management
 
 1. **create_user** - Create a new user in ServiceNow
-2. **update_user** - Update an existing user in ServiceNow
+2. **update_user** - Update an existing user (accepts sys_id, username, or email)
 3. **get_user** - Get a specific user by ID, username, or email
 4. **list_users** - List users with filtering options
+5. **set_password** - Set (reset) a user's password, optionally requiring a reset at next login
+6. **delete_user** - Delete a user (by sys_id, username, or email)
 
 ### Group Management
 
-5. **create_group** - Create a new group in ServiceNow
-6. **update_group** - Update an existing group in ServiceNow
-7. **add_group_members** - Add members to a group in ServiceNow
-8. **remove_group_members** - Remove members from a group in ServiceNow
-9. **list_groups** - List groups with filtering options
+7. **create_group** - Create a new group in ServiceNow
+8. **update_group** - Update an existing group in ServiceNow
+9. **add_group_members** - Add members to a group in ServiceNow
+10. **remove_group_members** - Remove members from a group in ServiceNow
+11. **list_groups** - List groups with filtering options
+12. **delete_group** - Delete a group (by sys_id or name)
+
+> `create_user` and `update_user` also accept `active`, `locked_out`, and
+> `password_needs_reset` boolean flags. `update_user`, `set_password`, and
+> `delete_user` accept a sys_id, username, or email and resolve it automatically.
 
 ## Tool Details
 
@@ -267,6 +274,61 @@ result = list_groups({
     "query": "support",
     "limit": 20
 })
+```
+
+### set_password
+
+Sets (resets) a user's password. `user_password` is an encrypted field, so this
+sends an **isolated** request with `sysparm_input_display_value=true` (the Table
+API equivalent of `GlideRecord.setDisplayValue`) — kept separate from any
+reference-field writes, which that parameter would otherwise misinterpret.
+`create_user`/`update_user` route their `password` through this same path.
+
+> **Caveat:** whether a Table-API password write yields a usable login is
+> instance-dependent — the account needs write access to
+> `sys_user.user_password` + the encryption context, and some instances/versions
+> store the value without hashing or enforce a reset on API-set passwords. For
+> guaranteed end-user password setting, use ServiceNow's **Password Reset**
+> workflow. Use `require_reset=true` to force a change at next login.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| user_id | string | Yes | User sys_id, username, or email |
+| password | string | Yes | New password |
+| require_reset | boolean | No | Require the user to change the password at next login (default: false) |
+
+```python
+result = set_password({"user_id": "abel.tuter", "password": "Chang3#Me!", "require_reset": true})
+```
+
+### delete_user
+
+Deletes a user.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| user_id | string | Yes | User sys_id, username, or email |
+
+```python
+result = delete_user({"user_id": "abel.tuter"})
+```
+
+### delete_group
+
+Deletes a group.
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| group_id | string | Yes | Group sys_id or name |
+
+```python
+result = delete_group({"group_id": "Service Desk"})
 ```
 
 ## Common Scenarios

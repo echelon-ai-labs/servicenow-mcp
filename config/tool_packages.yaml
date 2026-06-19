@@ -16,6 +16,10 @@ service_desk:
   - resolve_incident
   - list_incidents
   - get_incident_by_number
+  - get_incident
+  - delete_incident
+  - close_incident
+  - reopen_incident
   # User Lookup
   - get_user
   - list_users
@@ -25,10 +29,8 @@ service_desk:
 
 catalog_builder:
   # Core Catalog
-  - list_catalogs
   - list_catalog_items
   - get_catalog_item
-  - create_catalog_item
   - update_catalog_item
   # Categories
   - list_catalog_categories
@@ -39,13 +41,6 @@ catalog_builder:
   - create_catalog_item_variable
   - list_catalog_item_variables
   - update_catalog_item_variable
-  - delete_catalog_item_variable
-  - create_catalog_variable_choice
-  # Basic Scripting (UI Policy & User Criteria)
-  - create_ui_policy
-  - create_ui_policy_action
-  - create_user_criteria
-  - create_user_criteria_condition
   # Optimization
   - get_optimization_recommendations
 
@@ -74,6 +69,7 @@ knowledge_author:
   - publish_article
   - list_articles
   - get_article
+  - delete_article
 
 platform_developer:
   # Script Includes
@@ -82,7 +78,6 @@ platform_developer:
   - create_script_include
   - update_script_include
   - delete_script_include
-  - execute_script_include
   # Workflows
   - list_workflows
   - get_workflow_details
@@ -91,15 +86,13 @@ platform_developer:
   - activate_workflow
   - deactivate_workflow
   - list_workflow_versions
+  - delete_workflow
   # Workflow Activities
   - add_workflow_activity
   - update_workflow_activity
   - delete_workflow_activity
   - reorder_workflow_activities
   - get_workflow_activities
-  # General UI Policies
-  - create_ui_policy
-  - create_ui_policy_action
   # Changesets
   - list_changesets
   - get_changeset_details
@@ -136,15 +129,15 @@ system_administrator:
   - update_user
   - get_user
   - list_users
+  - set_password
+  - delete_user
   # Group Management
   - create_group
   - update_group
   - list_groups
   - add_group_members
   - remove_group_members
-  # System Logs
-  - list_syslog_entries
-  - get_syslog_entry
+  - delete_group
 
 full:
   # Incident Management
@@ -154,11 +147,13 @@ full:
   - resolve_incident
   - list_incidents
   - get_incident_by_number
+  - get_incident
+  - delete_incident
+  - close_incident
+  - reopen_incident
   # Catalog (Core)
-  - list_catalogs
   - list_catalog_items
   - get_catalog_item
-  - create_catalog_item
   - update_catalog_item
   # Catalog (Categories)
   - list_catalog_categories
@@ -171,8 +166,6 @@ full:
   - create_catalog_item_variable
   - list_catalog_item_variables
   - update_catalog_item_variable
-  - delete_catalog_item_variable
-  - create_catalog_variable_choice
   # Change Management
   - create_change_request
   - update_change_request
@@ -195,6 +188,7 @@ full:
   - update_workflow_activity
   - delete_workflow_activity
   - reorder_workflow_activities
+  - delete_workflow
   # Changeset
   - list_changesets
   - get_changeset_details
@@ -209,7 +203,6 @@ full:
   - create_script_include
   - update_script_include
   - delete_script_include
-  - execute_script_include
   # Knowledge Base
   - create_knowledge_base
   - list_knowledge_bases
@@ -220,25 +213,20 @@ full:
   - publish_article
   - list_articles
   - get_article
+  - delete_article
   # User Management
   - create_user
   - update_user
   - get_user
   - list_users
+  - set_password
+  - delete_user
   - create_group
   - update_group
   - add_group_members
   - remove_group_members
   - list_groups
-  # Syslog
-  - list_syslog_entries
-  - get_syslog_entry
-  # Catalog Criteria
-  - create_user_criteria
-  - create_user_criteria_condition
-  # UI Policy
-  - create_ui_policy
-  - create_ui_policy_action
+  - delete_group
   # Story Management
   - create_story
   - update_story

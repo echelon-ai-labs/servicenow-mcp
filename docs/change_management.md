@@ -188,4 +188,21 @@ The change management tools can be customized to match your organization's speci
 - Additional fields can be added to the parameter models if needed
 - Approval workflows may need to be modified to match your organization's approval process
 
-To customize the tools, modify the `change_tools.py` file in the `src/servicenow_mcp/tools` directory. 
+To customize the tools, modify the `change_tools.py` file in the `src/servicenow_mcp/tools` directory.
+
+## Notes on the change state model & approvals
+
+- **State is governed by the Change Model.** On instances with the Change
+  Management state model, the `state` field cannot be set to an arbitrary value
+  via the REST API — a "Change Model: Check State Transition" business rule
+  rejects invalid transitions (HTTP 403). The `state` codes are numeric
+  (`-5` New, `-4` Assess, `-3` Authorize, `-2` Scheduled, `-1` Implement,
+  `0` Review, `3` Closed, `4` Canceled). `update_change_request` will surface
+  the business-rule error if a transition is blocked.
+- **Approvals are driven through the writable `approval` field.**
+  `submit_change_for_approval` sets `approval=requested`, `approve_change` sets
+  `approval=approved`, and `reject_change` sets `approval=rejected` (each also
+  updates any pending `sysapproval_approver` records when present). This works
+  regardless of the state model.
+- `change_id` accepts a change number (e.g. `CHG0030001`) or a sys_id; it is
+  resolved to a sys_id automatically. 

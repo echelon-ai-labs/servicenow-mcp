@@ -12,6 +12,7 @@ import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
+from servicenow_mcp.utils.api import error_detail
 from servicenow_mcp.utils.config import ServerConfig
 
 logger = logging.getLogger(__name__)
@@ -103,7 +104,7 @@ def _unwrap_and_validate_params(params: Any, model_class: Type[T], required_fiel
         logger.error(f"Error validating parameters: {e}")
         return {
             "success": False,
-            "message": f"Error validating parameters: {str(e)}",
+            "message": f"Error validating parameters: {error_detail(e)}",
         }
 
 
@@ -237,7 +238,7 @@ def create_epic(
         logger.error(f"Error creating epic: {e}")
         return {
             "success": False,
-            "message": f"Error creating epic: {str(e)}",
+            "message": f"Error creating epic: {error_detail(e)}",
         }
 
 def update_epic(
@@ -322,7 +323,7 @@ def update_epic(
         logger.error(f"Error updating epic: {e}")
         return {
             "success": False,
-            "message": f"Error updating epic: {str(e)}",
+            "message": f"Error updating epic: {error_detail(e)}",
         }
 
 def list_epics(
@@ -423,5 +424,5 @@ def list_epics(
         logger.error(f"Error listing epics: {e}")
         return {
             "success": False,
-            "message": f"Error listing epics: {str(e)}",
+            "message": f"Error listing epics: {error_detail(e)}",
         }

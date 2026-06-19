@@ -208,6 +208,22 @@ The Knowledge Base tools use the following ServiceNow API endpoints:
 
 All knowledge base tools handle errors gracefully and return responses with `success` and `message` fields. If an operation fails, the `success` field will be `false` and the `message` field will contain information about the error.
 
+## Notes & behavior
+
+- **delete_article** removes an article by number (e.g. `KB0010001`) or sys_id.
+  `update_article`, `get_article`, and `publish_article` also accept either form
+  (the number is resolved to a sys_id automatically).
+- **Publishing is governed.** On instances with a Knowledge state flow, a direct
+  `workflow_state` write can be reverted by a business rule. `publish_article`
+  re-fetches and reports the *actual* resulting state (and reports `success`
+  only if the requested state was achieved) rather than assuming it worked.
+- **Categories link to their container via `parent_id` + `parent_table`** (the
+  knowledge base for a top-level category, or the parent category for a
+  subcategory) — not a `kb_knowledge_base` column. `create_category` and the
+  `list_categories` knowledge-base filter use this.
+- **Knowledge bases cannot be hard-deleted via the Table API** and a "Duplicate
+  Knowledge Base" rule blocks same-titled KBs — use find-or-create when scripting.
+
 ## Additional Information
 
 For more information about knowledge management in ServiceNow, see the [ServiceNow Knowledge Management documentation](https://docs.servicenow.com/bundle/tokyo-servicenow-platform/page/product/knowledge-management/concept/c_KnowledgeManagement.html).

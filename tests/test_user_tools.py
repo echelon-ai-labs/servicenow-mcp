@@ -10,22 +10,30 @@ from servicenow_mcp.tools.user_tools import (
     AddGroupMembersParams,
     CreateGroupParams,
     CreateUserParams,
+    DeleteGroupParams,
+    DeleteUserParams,
     GetUserParams,
     ListUsersParams,
     ListGroupsParams,
     RemoveGroupMembersParams,
+    SetPasswordParams,
     UpdateGroupParams,
     UpdateUserParams,
     add_group_members,
     create_group,
     create_user,
+    delete_group,
+    delete_user,
     get_user,
     list_users,
     list_groups,
     remove_group_members,
+    set_password,
     update_group,
     update_user,
 )
+
+SYS_ID = "0123456789abcdef0123456789abcdef"
 from servicenow_mcp.utils.config import AuthConfig, AuthType, BasicAuthConfig, ServerConfig
 
 
@@ -106,7 +114,7 @@ class TestUserTools(unittest.TestCase):
         
         # Create test params
         params = UpdateUserParams(
-            user_id="user123",
+            user_id="0123456789abcdef0123456789abcdef",  # 32-char sys_id: no lookup needed
             manager="user456",
             title="Senior Doctor",
         )
@@ -122,7 +130,7 @@ class TestUserTools(unittest.TestCase):
         # Verify mock was called correctly
         mock_patch.assert_called_once()
         call_args = mock_patch.call_args
-        self.assertEqual(call_args[0][0], f"{self.config.api_url}/table/sys_user/user123")
+        self.assertEqual(call_args[0][0], f"{self.config.api_url}/table/sys_user/0123456789abcdef0123456789abcdef")
         self.assertEqual(call_args[1]["json"]["manager"], "user456")
         self.assertEqual(call_args[1]["json"]["title"], "Senior Doctor")
 
@@ -433,6 +441,89 @@ class TestUserTools(unittest.TestCase):
         mock_delete.assert_called_once()
         delete_call_args = mock_delete.call_args
         self.assertEqual(delete_call_args[0][0], f"{self.config.api_url}/table/sys_user_grmember/member123")
+
+    @patch("requests.post")
+    def test_create_user_sets_lock_and_reset(self, mock_post):
+        """locked_out / password_needs_reset are written as string booleans."""
+        resp = MagicMock()
+        resp.raise_for_status = MagicMock()
+        resp.json.return_value = {"result": {"sys_id": SYS_ID, "user_name": "x"}}
+        mock_post.return_value = resp
+        result = create_user(self.config, self.auth_manager, CreateUserParams(
+            user_name="x", first_name="X", last_name="Y", email="x@y.com",
+            locked_out=True, password_needs_reset=True))
+        self.assertTrue(result.success)
+        sent = mock_post.call_args[1]["json"]
+        self.assertEqual(sent["locked_out"], "true")
+        self.assertEqual(sent["password_needs_reset"], "true")
+
+    @patch("requests.patch")
+    @patch("requests.get")
+    def test_update_user_resolves_username(self, mock_get, mock_patch):
+        """A non-sys_id user_id is resolved to a sys_id before PATCH."""
+        lookup = MagicMock()
+        lookup.raise_for_status = MagicMock()
+        lookup.json.return_value = {"result": [{"sys_id": SYS_ID}]}
+        mock_get.return_value = lookup
+        patched = MagicMock()
+        patched.raise_for_status = MagicMock()
+        patched.json.return_value = {"result": {"sys_id": SYS_ID, "user_name": "someuser"}}
+        mock_patch.return_value = patched
+        result = update_user(self.config, self.auth_manager, UpdateUserParams(user_id="someuser", title="T"))
+        self.assertTrue(result.success)
+        self.assertIn("sys_user", mock_get.call_args[0][0])
+        self.assertEqual(mock_patch.call_args[0][0], f"{self.config.api_url}/table/sys_user/{SYS_ID}")
+
+    @patch("requests.patch")
+    def test_set_password(self, mock_patch):
+        resp = MagicMock()
+        resp.raise_for_status = MagicMock()
+        resp.json.return_value = {"result": {"sys_id": SYS_ID, "user_name": "x"}}
+        mock_patch.return_value = resp
+        result = set_password(self.config, self.auth_manager, SetPasswordParams(
+            user_id=SYS_ID, password="Secret#1", require_reset=True))
+        self.assertTrue(result.success)
+        sent = mock_patch.call_args[1]["json"]
+        self.assertEqual(sent["user_password"], "Secret#1")
+        self.assertEqual(sent["password_needs_reset"], "true")
+        self.assertEqual(mock_patch.call_args[0][0], f"{self.config.api_url}/table/sys_user/{SYS_ID}")
+        # encrypted field must be written with sysparm_input_display_value=true,
+        # on an isolated request (no reference fields in the body)
+        self.assertEqual(mock_patch.call_args[1]["params"]["sysparm_input_display_value"], "true")
+        self.assertNotIn("manager", sent)
+
+    @patch("requests.patch")
+    @patch("requests.post")
+    def test_create_user_sets_password_in_isolated_request(self, mock_post, mock_patch):
+        """Password is NOT in the create payload; it is set via a follow-up
+        isolated PATCH with sysparm_input_display_value=true."""
+        created = MagicMock()
+        created.raise_for_status = MagicMock()
+        created.json.return_value = {"result": {"sys_id": SYS_ID, "user_name": "x"}}
+        mock_post.return_value = created
+        patched = MagicMock()
+        patched.raise_for_status = MagicMock()
+        patched.json.return_value = {"result": {"sys_id": SYS_ID, "user_name": "x"}}
+        mock_patch.return_value = patched
+
+        create_user(self.config, self.auth_manager, CreateUserParams(
+            user_name="x", first_name="X", last_name="Y", email="x@y.com",
+            manager="somemanager", password="Secret#1"))
+
+        # create POST must NOT contain user_password (would be stored unhashed)
+        self.assertNotIn("user_password", mock_post.call_args[1]["json"])
+        # follow-up PATCH sets the password with the isolation param
+        self.assertEqual(mock_patch.call_args[1]["json"]["user_password"], "Secret#1")
+        self.assertEqual(mock_patch.call_args[1]["params"]["sysparm_input_display_value"], "true")
+
+    @patch("requests.delete")
+    def test_delete_user(self, mock_delete):
+        resp = MagicMock()
+        resp.raise_for_status = MagicMock()
+        mock_delete.return_value = resp
+        result = delete_user(self.config, self.auth_manager, DeleteUserParams(user_id=SYS_ID))
+        self.assertTrue(result.success)
+        self.assertEqual(mock_delete.call_args[0][0], f"{self.config.api_url}/table/sys_user/{SYS_ID}")
 
 
 if __name__ == "__main__":

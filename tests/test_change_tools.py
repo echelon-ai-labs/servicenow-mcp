@@ -9,10 +9,15 @@ import requests
 
 from servicenow_mcp.auth.auth_manager import AuthManager
 from servicenow_mcp.tools.change_tools import (
+    approve_change,
     create_change_request,
     list_change_requests,
+    reject_change,
+    submit_change_for_approval,
 )
 from servicenow_mcp.utils.config import AuthConfig, AuthType, BasicAuthConfig, ServerConfig
+
+SYS_ID = "0123456789abcdef0123456789abcdef"
 
 
 class TestChangeTools(unittest.TestCase):
@@ -282,6 +287,51 @@ class TestChangeTools(unittest.TestCase):
         self.assertTrue(result["success"])
         self.assertEqual(result["change_request"]["sys_id"], "change123")
         self.assertEqual(result["change_request"]["number"], "CHG0010001")
+
+    @patch("servicenow_mcp.tools.change_tools.requests.patch")
+    def test_submit_sets_approval_requested(self, mock_patch):
+        """submit_change_for_approval drives the writable `approval` field."""
+        resp = MagicMock()
+        resp.raise_for_status = MagicMock()
+        resp.json.return_value = {"result": {"sys_id": SYS_ID, "number": "CHG0010001"}}
+        mock_patch.return_value = resp
+        result = submit_change_for_approval(
+            self.auth_manager, self.server_config, {"change_id": SYS_ID})
+        self.assertTrue(result["success"])
+        self.assertEqual(mock_patch.call_args[1]["json"]["approval"], "requested")
+
+    @patch("servicenow_mcp.tools.change_tools.requests.get")
+    @patch("servicenow_mcp.tools.change_tools.requests.patch")
+    def test_approve_sets_approval_approved(self, mock_patch, mock_get):
+        """approve_change sets the change `approval` field to approved."""
+        getr = MagicMock()
+        getr.ok = True
+        getr.json.return_value = {"result": []}  # no approval records
+        mock_get.return_value = getr
+        patchr = MagicMock()
+        patchr.raise_for_status = MagicMock()
+        patchr.json.return_value = {"result": {"sys_id": SYS_ID}}
+        mock_patch.return_value = patchr
+        result = approve_change(self.auth_manager, self.server_config, {"change_id": SYS_ID})
+        self.assertTrue(result["success"])
+        self.assertEqual(mock_patch.call_args[1]["json"]["approval"], "approved")
+
+    @patch("servicenow_mcp.tools.change_tools.requests.get")
+    @patch("servicenow_mcp.tools.change_tools.requests.patch")
+    def test_reject_sets_approval_rejected(self, mock_patch, mock_get):
+        """reject_change sets the change `approval` field to rejected."""
+        getr = MagicMock()
+        getr.ok = True
+        getr.json.return_value = {"result": []}
+        mock_get.return_value = getr
+        patchr = MagicMock()
+        patchr.raise_for_status = MagicMock()
+        patchr.json.return_value = {"result": {"sys_id": SYS_ID}}
+        mock_patch.return_value = patchr
+        result = reject_change(
+            self.auth_manager, self.server_config, {"change_id": SYS_ID, "rejection_reason": "no plan"})
+        self.assertTrue(result["success"])
+        self.assertEqual(mock_patch.call_args[1]["json"]["approval"], "rejected")
 
 
 if __name__ == "__main__":

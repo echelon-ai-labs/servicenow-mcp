@@ -5,12 +5,13 @@ This module provides tools for managing users and groups in ServiceNow.
 """
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
+from servicenow_mcp.utils.api import error_detail
 from servicenow_mcp.utils.config import ServerConfig
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,10 @@ class CreateUserParams(BaseModel):
     location: Optional[str] = Field(None, description="Location of the user")
     password: Optional[str] = Field(None, description="Password for the user account")
     active: Optional[bool] = Field(True, description="Whether the user account is active")
+    locked_out: Optional[bool] = Field(None, description="Whether the user account is locked out")
+    password_needs_reset: Optional[bool] = Field(
+        None, description="Whether the user must reset their password at next login"
+    )
 
 
 class UpdateUserParams(BaseModel):
@@ -51,6 +56,10 @@ class UpdateUserParams(BaseModel):
     location: Optional[str] = Field(None, description="Location of the user")
     password: Optional[str] = Field(None, description="Password for the user account")
     active: Optional[bool] = Field(None, description="Whether the user account is active")
+    locked_out: Optional[bool] = Field(None, description="Whether the user account is locked out")
+    password_needs_reset: Optional[bool] = Field(
+        None, description="Whether the user must reset their password at next login"
+    )
 
 
 class GetUserParams(BaseModel):
@@ -133,6 +142,28 @@ class ListGroupsParams(BaseModel):
     type: Optional[str] = Field(None, description="Filter by group type")
 
 
+class SetPasswordParams(BaseModel):
+    """Parameters for setting a user's password."""
+
+    user_id: str = Field(..., description="User sys_id, username, or email")
+    password: str = Field(..., description="New password for the user account")
+    require_reset: bool = Field(
+        False, description="Require the user to change the password at next login"
+    )
+
+
+class DeleteUserParams(BaseModel):
+    """Parameters for deleting a user."""
+
+    user_id: str = Field(..., description="User sys_id, username, or email")
+
+
+class DeleteGroupParams(BaseModel):
+    """Parameters for deleting a group."""
+
+    group_id: str = Field(..., description="Group sys_id or name")
+
+
 class UserResponse(BaseModel):
     """Response from user operations."""
 
@@ -149,6 +180,54 @@ class GroupResponse(BaseModel):
     message: str = Field(..., description="Message describing the result")
     group_id: Optional[str] = Field(None, description="ID of the affected group")
     group_name: Optional[str] = Field(None, description="Name of the affected group")
+
+
+def _resolve_user_sys_id(
+    config: ServerConfig, auth_manager: AuthManager, user_ref: str
+) -> Tuple[Optional[str], Optional[str]]:
+    """Resolve a user sys_id / username / email to a sys_id. Returns (sys_id, error)."""
+    if len(user_ref) == 32 and all(c in "0123456789abcdef" for c in user_ref):
+        return user_ref, None
+    try:
+        response = requests.get(
+            f"{config.api_url}/table/sys_user",
+            params={
+                "sysparm_query": f"user_name={user_ref}^ORemail={user_ref}",
+                "sysparm_limit": 1,
+                "sysparm_fields": "sys_id",
+            },
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        response.raise_for_status()
+    except requests.RequestException as e:
+        return None, f"Failed to look up user '{user_ref}': {error_detail(e)}"
+    result = response.json().get("result", [])
+    if not result:
+        return None, f"User not found: {user_ref}"
+    return result[0].get("sys_id"), None
+
+
+def _resolve_group_sys_id(
+    config: ServerConfig, auth_manager: AuthManager, group_ref: str
+) -> Tuple[Optional[str], Optional[str]]:
+    """Resolve a group sys_id / name to a sys_id. Returns (sys_id, error)."""
+    if len(group_ref) == 32 and all(c in "0123456789abcdef" for c in group_ref):
+        return group_ref, None
+    try:
+        response = requests.get(
+            f"{config.api_url}/table/sys_user_group",
+            params={"sysparm_query": f"name={group_ref}", "sysparm_limit": 1, "sysparm_fields": "sys_id"},
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        response.raise_for_status()
+    except requests.RequestException as e:
+        return None, f"Failed to look up group '{group_ref}': {error_detail(e)}"
+    result = response.json().get("result", [])
+    if not result:
+        return None, f"Group not found: {group_ref}"
+    return result[0].get("sys_id"), None
 
 
 def create_user(
@@ -190,8 +269,13 @@ def create_user(
         data["mobile_phone"] = params.mobile_phone
     if params.location:
         data["location"] = params.location
-    if params.password:
-        data["user_password"] = params.password
+    if params.locked_out is not None:
+        data["locked_out"] = str(params.locked_out).lower()
+    if params.password_needs_reset is not None:
+        data["password_needs_reset"] = str(params.password_needs_reset).lower()
+    # NOTE: user_password is intentionally NOT in this payload — it is an encrypted
+    # field that must be written in a dedicated request (see set_password), separate
+    # from the reference fields (manager/department/location) above.
 
     # Make request
     try:
@@ -209,6 +293,11 @@ def create_user(
         if params.roles and result.get("sys_id"):
             assign_roles_to_user(config, auth_manager, result.get("sys_id"), params.roles)
 
+        # Set the password via the dedicated encrypted-field path
+        if params.password and result.get("sys_id"):
+            set_password(config, auth_manager, SetPasswordParams(
+                user_id=result.get("sys_id"), password=params.password))
+
         return UserResponse(
             success=True,
             message="User created successfully",
@@ -220,7 +309,7 @@ def create_user(
         logger.error(f"Failed to create user: {e}")
         return UserResponse(
             success=False,
-            message=f"Failed to create user: {str(e)}",
+            message=f"Failed to create user: {error_detail(e)}",
         )
 
 
@@ -240,7 +329,12 @@ def update_user(
     Returns:
         Response with the updated user details.
     """
-    api_url = f"{config.api_url}/table/sys_user/{params.user_id}"
+    # Resolve user_id (sys_id, username, or email) to a sys_id — the Table API
+    # URL needs a sys_id, so passing a username would otherwise 404.
+    sys_id, error = _resolve_user_sys_id(config, auth_manager, params.user_id)
+    if error:
+        return UserResponse(success=False, message=error)
+    api_url = f"{config.api_url}/table/sys_user/{sys_id}"
 
     # Build request data
     data = {}
@@ -264,10 +358,13 @@ def update_user(
         data["mobile_phone"] = params.mobile_phone
     if params.location:
         data["location"] = params.location
-    if params.password:
-        data["user_password"] = params.password
     if params.active is not None:
         data["active"] = str(params.active).lower()
+    if params.locked_out is not None:
+        data["locked_out"] = str(params.locked_out).lower()
+    if params.password_needs_reset is not None:
+        data["password_needs_reset"] = str(params.password_needs_reset).lower()
+    # user_password is set separately (encrypted field) — see set_password.
 
     # Make request
     try:
@@ -283,7 +380,12 @@ def update_user(
 
         # Handle role assignments if provided
         if params.roles:
-            assign_roles_to_user(config, auth_manager, params.user_id, params.roles)
+            assign_roles_to_user(config, auth_manager, sys_id, params.roles)
+
+        # Set the password via the dedicated encrypted-field path
+        if params.password:
+            set_password(config, auth_manager, SetPasswordParams(
+                user_id=sys_id, password=params.password))
 
         return UserResponse(
             success=True,
@@ -296,7 +398,7 @@ def update_user(
         logger.error(f"Failed to update user: {e}")
         return UserResponse(
             success=False,
-            message=f"Failed to update user: {str(e)}",
+            message=f"Failed to update user: {error_detail(e)}",
         )
 
 
@@ -894,3 +996,129 @@ def remove_group_members(
         message=message,
         group_id=params.group_id,
     )
+
+
+def set_password(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: SetPasswordParams,
+) -> UserResponse:
+    """
+    Set (reset) a user's password in ServiceNow.
+
+    ``user_password`` is an encrypted field. This sends an isolated request with
+    ``sysparm_input_display_value=true`` (the Table API equivalent of
+    GlideRecord.setDisplayValue) so the value is run through ServiceNow's password
+    handler rather than stored verbatim. The request must be isolated because that
+    parameter reinterprets *every* submitted field as a display value, which would
+    break reference fields (manager/department/...).
+
+    Caveat: whether a Table-API write produces a usable login depends on the
+    instance — the account needs write access to ``sys_user.user_password`` and the
+    encryption context, and some instances/versions still store the value without
+    hashing or enforce a reset on API-set passwords. For guaranteed end-user
+    password setting, use ServiceNow's Password Reset workflow. Setting
+    ``require_reset=true`` forces the user to choose a new password at next login.
+
+    Args:
+        config: Server configuration.
+        auth_manager: Authentication manager.
+        params: Parameters with the user reference, new password, and reset flag.
+
+    Returns:
+        Response with the result of the operation.
+    """
+    sys_id, error = _resolve_user_sys_id(config, auth_manager, params.user_id)
+    if error:
+        return UserResponse(success=False, message=error)
+
+    data = {"user_password": params.password}
+    if params.require_reset:
+        data["password_needs_reset"] = "true"
+
+    try:
+        response = requests.patch(
+            f"{config.api_url}/table/sys_user/{sys_id}",
+            params={"sysparm_input_display_value": "true"},
+            json=data,
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        response.raise_for_status()
+        result = response.json().get("result", {})
+        return UserResponse(
+            success=True,
+            message="Password set successfully"
+            + (" (user must reset at next login)" if params.require_reset else ""),
+            user_id=result.get("sys_id", sys_id),
+            user_name=result.get("user_name"),
+        )
+    except requests.RequestException as e:
+        logger.error(f"Failed to set password: {e}")
+        return UserResponse(success=False, message=f"Failed to set password: {error_detail(e)}")
+
+
+def delete_user(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: DeleteUserParams,
+) -> UserResponse:
+    """
+    Delete a user in ServiceNow.
+
+    Args:
+        config: Server configuration.
+        auth_manager: Authentication manager.
+        params: Parameters identifying the user (sys_id, username, or email).
+
+    Returns:
+        Response with the result of the operation.
+    """
+    sys_id, error = _resolve_user_sys_id(config, auth_manager, params.user_id)
+    if error:
+        return UserResponse(success=False, message=error)
+
+    try:
+        response = requests.delete(
+            f"{config.api_url}/table/sys_user/{sys_id}",
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        response.raise_for_status()
+        return UserResponse(success=True, message="User deleted successfully", user_id=sys_id)
+    except requests.RequestException as e:
+        logger.error(f"Failed to delete user: {e}")
+        return UserResponse(success=False, message=f"Failed to delete user: {error_detail(e)}")
+
+
+def delete_group(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: DeleteGroupParams,
+) -> GroupResponse:
+    """
+    Delete a group in ServiceNow.
+
+    Args:
+        config: Server configuration.
+        auth_manager: Authentication manager.
+        params: Parameters identifying the group (sys_id or name).
+
+    Returns:
+        Response with the result of the operation.
+    """
+    sys_id, error = _resolve_group_sys_id(config, auth_manager, params.group_id)
+    if error:
+        return GroupResponse(success=False, message=error)
+
+    try:
+        response = requests.delete(
+            f"{config.api_url}/table/sys_user_group/{sys_id}",
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        response.raise_for_status()
+        return GroupResponse(success=True, message="Group deleted successfully", group_id=sys_id)
+    except requests.RequestException as e:
+        logger.error(f"Failed to delete group: {e}")
+        return GroupResponse(success=False, message=f"Failed to delete group: {error_detail(e)}")

@@ -11,6 +11,7 @@ import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
+from servicenow_mcp.utils.api import error_detail
 from servicenow_mcp.utils.config import ServerConfig
 
 logger = logging.getLogger(__name__)
@@ -128,7 +129,7 @@ def _unwrap_and_validate_params(
     except Exception as e:
         return {
             "success": False,
-            "message": f"Invalid parameters: {str(e)}",
+            "message": f"Invalid parameters: {error_detail(e)}",
         }
 
 
@@ -279,7 +280,7 @@ def list_changesets(
         logger.error(f"Error listing changesets: {e}")
         return {
             "success": False,
-            "message": f"Error listing changesets: {str(e)}",
+            "message": f"Error listing changesets: {error_detail(e)}",
         }
 
 
@@ -361,7 +362,7 @@ def get_changeset_details(
         logger.error(f"Error getting changeset details: {e}")
         return {
             "success": False,
-            "message": f"Error getting changeset details: {str(e)}",
+            "message": f"Error getting changeset details: {error_detail(e)}",
         }
 
 
@@ -442,7 +443,7 @@ def create_changeset(
         logger.error(f"Error creating changeset: {e}")
         return {
             "success": False,
-            "message": f"Error creating changeset: {str(e)}",
+            "message": f"Error creating changeset: {error_detail(e)}",
         }
 
 
@@ -531,7 +532,7 @@ def update_changeset(
         logger.error(f"Error updating changeset: {e}")
         return {
             "success": False,
-            "message": f"Error updating changeset: {str(e)}",
+            "message": f"Error updating changeset: {error_detail(e)}",
         }
 
 
@@ -609,7 +610,7 @@ def commit_changeset(
         logger.error(f"Error committing changeset: {e}")
         return {
             "success": False,
-            "message": f"Error committing changeset: {str(e)}",
+            "message": f"Error committing changeset: {error_detail(e)}",
         }
 
 
@@ -687,7 +688,7 @@ def publish_changeset(
         logger.error(f"Error publishing changeset: {e}")
         return {
             "success": False,
-            "message": f"Error publishing changeset: {str(e)}",
+            "message": f"Error publishing changeset: {error_detail(e)}",
         }
 
 
@@ -764,5 +765,5 @@ def add_file_to_changeset(
         logger.error(f"Error adding file to changeset: {e}")
         return {
             "success": False,
-            "message": f"Error adding file to changeset: {str(e)}",
+            "message": f"Error adding file to changeset: {error_detail(e)}",
         } 

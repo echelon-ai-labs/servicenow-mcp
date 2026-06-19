@@ -15,6 +15,7 @@ import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
+from servicenow_mcp.utils.api import error_detail
 from servicenow_mcp.utils.config import ServerConfig
 
 logger = logging.getLogger(__name__)
@@ -136,7 +137,7 @@ def get_optimization_recommendations(
         logger.error(f"Error getting optimization recommendations: {e}")
         return {
             "success": False,
-            "message": f"Error getting optimization recommendations: {str(e)}",
+            "message": f"Error getting optimization recommendations: {error_detail(e)}",
             "recommendations": [],
         }
 
@@ -193,7 +194,7 @@ def update_catalog_item(
         logger.error(f"Error updating catalog item: {e}")
         return {
             "success": False,
-            "message": f"Error updating catalog item: {str(e)}",
+            "message": f"Error updating catalog item: {error_detail(e)}",
             "data": None,
         }
 

@@ -1,12 +1,6 @@
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/osomai-servicenow-mcp-badge.png)](https://mseep.ai/app/osomai-servicenow-mcp)
-
 # ServiceNow MCP Server
 
 A Model Completion Protocol (MCP) server implementation for ServiceNow, allowing Claude to interact with ServiceNow instances.
-
-<a href="https://glama.ai/mcp/servers/@osomai/servicenow-mcp">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/@osomai/servicenow-mcp/badge" alt="ServiceNow Server MCP server" />
-</a>
 
 ## Overview
 
@@ -71,60 +65,70 @@ SERVICENOW_INSTANCE_URL=https://your-instance.service-now.com SERVICENOW_USERNAM
 
 ### Server-Sent Events (SSE) Mode
 
-The ServiceNow MCP server can also run as a web server using Server-Sent Events (SSE) for communication, which allows for more flexible integration options.
+The ServiceNow MCP server can also run as a web server using Server-Sent Events (SSE) for communication.
 
-#### Starting the SSE Server
+> **Security:** the SSE transport authenticates every request with a bearer token and rejects requests whose `Host` or `Origin` headers are not in an allowlist. By default it binds to `127.0.0.1` only; non-loopback bind requires `--allow-remote` and an explicit `MCP_AUTH_TOKEN`. See [Vulnerability disclosure (EntruLabs, 2026-04-22)](#) for the original report this hardening addresses.
 
-You can start the SSE server using the provided CLI:
-
-```
-servicenow-mcp-sse --instance-url=https://your-instance.service-now.com --username=your-username --password=your-password
-```
-
-By default, the server will listen on `0.0.0.0:8080`. You can customize the host and port:
+#### Starting the SSE Server (loopback, local dev)
 
 ```
-servicenow-mcp-sse --host=127.0.0.1 --port=8000
+servicenow-mcp-sse
 ```
 
-#### Connecting to the SSE Server
+The server binds `127.0.0.1:8080`, generates a random bearer token, and prints it once to stderr:
 
-The SSE server exposes two main endpoints:
+```
+[servicenow-mcp-sse] generated auth token: <random-token>
+```
 
-- `/sse` - The SSE connection endpoint
-- `/messages/` - The endpoint for sending messages to the server
+Use that token on every request:
 
-#### Example
+```
+curl -N -H "Authorization: Bearer <random-token>" http://127.0.0.1:8080/sse
+```
 
-See the `examples/sse_server_example.py` file for a complete example of setting up and running the SSE server.
+To pin a stable token, set `MCP_AUTH_TOKEN` in `.env` (then no token is auto-generated).
+
+#### Exposing the SSE Server beyond loopback
+
+Non-loopback bind is opt-in and requires both `--allow-remote` and an explicit `MCP_AUTH_TOKEN`:
+
+```
+MCP_AUTH_TOKEN=$(openssl rand -hex 32) \
+servicenow-mcp-sse --host=0.0.0.0 --port=8080 --allow-remote \
+  --allowed-host=mcp.internal --allowed-host=mcp.internal:8080
+```
+
+You can pass `--allowed-host` repeatedly, or use the env var:
+
+```
+MCP_ALLOWED_HOSTS=mcp.internal,mcp.internal:8080
+```
+
+Loopback hosts (`127.0.0.1`, `localhost`, `[::1]`) are always allowed.
+
+#### Endpoints
+
+- `/sse` — SSE connection endpoint (bearer-token required)
+- `/messages/` — JSON-RPC POST endpoint (bearer-token required)
+
+#### Programmatic example
 
 ```python
-from servicenow_mcp.server import ServiceNowMCP
-from servicenow_mcp.server_sse import create_starlette_app
-from servicenow_mcp.utils.config import ServerConfig, AuthConfig, AuthType, BasicAuthConfig
-import uvicorn
+from servicenow_mcp.server_sse import create_servicenow_mcp
 
-# Create server configuration
-config = ServerConfig(
+mcp = create_servicenow_mcp(
     instance_url="https://your-instance.service-now.com",
-    auth=AuthConfig(
-        type=AuthType.BASIC,
-        config=BasicAuthConfig(
-            username="your-username",
-            password="your-password"
-        )
-    ),
-    debug=True,
+    username="your-username",
+    password="your-password",
 )
+mcp.start()  # 127.0.0.1:8080, auto-generated bearer token logged to stderr
+```
 
-# Create ServiceNow MCP server
-servicenow_mcp = ServiceNowMCP(config)
+To bind beyond loopback from code, set `MCP_AUTH_TOKEN` and pass `allow_remote=True`:
 
-# Create Starlette app with SSE transport
-app = create_starlette_app(servicenow_mcp, debug=True)
-
-# Start the web server
-uvicorn.run(app, host="0.0.0.0", port=8080)
+```python
+mcp.start(host="0.0.0.0", port=8080, allow_remote=True)
 ```
 
 ## Tool Packaging (Optional)
@@ -187,7 +191,6 @@ The default `config/tool_packages.yaml` includes the following role-based packag
 7. **create_catalog_item_variable** - Create a new variable (form field) for a catalog item
 8. **list_catalog_item_variables** - List all variables for a catalog item
 9. **update_catalog_item_variable** - Update an existing variable for a catalog item
-10. **list_catalogs** - List service catalogs from ServiceNow
 
 #### Catalog Optimization Tools
 
@@ -277,11 +280,6 @@ The default `config/tool_packages.yaml` includes the following role-based packag
 7. **add_group_members** - Add members to a group in ServiceNow
 8. **remove_group_members** - Remove members from a group in ServiceNow
 9. **list_groups** - List groups with filtering options
-
-#### UI Policy Tools
-
-1. **create_ui_policy** - Creates a ServiceNow UI Policy, typically for a Catalog Item.
-2. **create_ui_policy_action** - Creates an action associated with a UI Policy to control variable states (visibility, mandatory, etc.).
 
 ### Using the MCP CLI
 

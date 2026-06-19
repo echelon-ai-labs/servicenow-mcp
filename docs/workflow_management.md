@@ -6,6 +6,13 @@ This document provides detailed information about the workflow management tools 
 
 ServiceNow workflows are a powerful automation feature that allows you to define and automate business processes. The workflow management tools in the ServiceNow MCP server enable you to view, create, and modify workflows in your ServiceNow instance.
 
+> **Note:** These tools target the **legacy** workflow engine (`wf_workflow` /
+> `wf_workflow_version` / `wf_activity`). Modern instances use Flow Designer, so
+> the legacy engine is often empty. CRUD on workflows works (create, get, update,
+> `delete_workflow`, list); a workflow's `active` flag and its activities are
+> governed by whether a version is published, so `activate_workflow` /
+> `get_workflow_activities` reflect that state rather than forcing it.
+
 ## Available Tools
 
 ### Viewing Workflows

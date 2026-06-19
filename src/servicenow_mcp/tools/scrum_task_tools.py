@@ -12,6 +12,7 @@ import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
+from servicenow_mcp.utils.api import error_detail
 from servicenow_mcp.utils.config import ServerConfig
 
 logger = logging.getLogger(__name__)
@@ -112,7 +113,7 @@ def _unwrap_and_validate_params(params: Any, model_class: Type[T], required_fiel
         logger.error(f"Error validating parameters: {e}")
         return {
             "success": False,
-            "message": f"Error validating parameters: {str(e)}",
+            "message": f"Error validating parameters: {error_detail(e)}",
         }
 
 
@@ -257,7 +258,7 @@ def create_scrum_task(
         logger.error(f"Error creating scrum task: {e}")
         return {
             "success": False,
-            "message": f"Error creating scrum task: {str(e)}",
+            "message": f"Error creating scrum task: {error_detail(e)}",
         }
 
 def update_scrum_task(
@@ -352,7 +353,7 @@ def update_scrum_task(
         logger.error(f"Error updating scrum task: {e}")
         return {
             "success": False,
-            "message": f"Error updating scrum task: {str(e)}",
+            "message": f"Error updating scrum task: {error_detail(e)}",
         }
 
 def list_scrum_tasks(
@@ -450,8 +451,8 @@ def list_scrum_tasks(
             "total": count,  # Use count as total if total is not provided
         }
     except requests.exceptions.RequestException as e:
-        logger.error(f"Error listing stories: {e}")
+        logger.error(f"Error listing scrum tasks: {e}")
         return {
             "success": False,
-            "message": f"Error listing stories: {str(e)}",
+            "message": f"Error listing scrum tasks: {error_detail(e)}",
         }

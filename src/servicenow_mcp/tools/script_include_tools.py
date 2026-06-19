@@ -11,6 +11,7 @@ import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
+from servicenow_mcp.utils.api import error_detail
 from servicenow_mcp.utils.config import ServerConfig
 
 logger = logging.getLogger(__name__)
@@ -140,8 +141,10 @@ def list_script_includes(
                 "access": item.get("access"),
                 "created_on": item.get("sys_created_on"),
                 "updated_on": item.get("sys_updated_on"),
-                "created_by": item.get("sys_created_by", {}).get("display_value"),
-                "updated_by": item.get("sys_updated_by", {}).get("display_value"),
+                "created_by": (item.get("sys_created_by") or {}).get("display_value")
+                if isinstance(item.get("sys_created_by"), dict) else item.get("sys_created_by"),
+                "updated_by": (item.get("sys_updated_by") or {}).get("display_value")
+                if isinstance(item.get("sys_updated_by"), dict) else item.get("sys_updated_by"),
             }
             script_includes.append(script_include)
             
@@ -158,7 +161,7 @@ def list_script_includes(
         logger.error(f"Error listing script includes: {e}")
         return {
             "success": False,
-            "message": f"Error listing script includes: {str(e)}",
+            "message": f"Error listing script includes: {error_detail(e)}",
             "script_includes": [],
             "total": 0,
             "limit": params.limit,
@@ -189,10 +192,12 @@ def get_script_include(
             "sysparm_fields": "sys_id,name,script,description,api_name,client_callable,active,access,sys_created_on,sys_updated_on,sys_created_by,sys_updated_by"
         }
         
-        # Determine if we're querying by sys_id or name
-        if params.script_include_id.startswith("sys_id:"):
-            sys_id = params.script_include_id.replace("sys_id:", "")
-            url = f"{config.instance_url}/api/now/table/sys_script_include/{sys_id}"
+        # Accept a raw 32-char sys_id, a legacy "sys_id:" prefix, or a name.
+        ref = params.script_include_id
+        if ref.startswith("sys_id:"):
+            ref = ref[len("sys_id:"):]
+        if len(ref) == 32 and all(c in "0123456789abcdef" for c in ref):
+            url = f"{config.instance_url}/api/now/table/sys_script_include/{ref}"
         else:
             # Query by name
             url = f"{config.instance_url}/api/now/table/sys_script_include"
@@ -241,8 +246,12 @@ def get_script_include(
             "access": item.get("access"),
             "created_on": item.get("sys_created_on"),
             "updated_on": item.get("sys_updated_on"),
-            "created_by": item.get("sys_created_by", {}).get("display_value"),
-            "updated_by": item.get("sys_updated_by", {}).get("display_value"),
+            # sys_created_by/sys_updated_by come back as a display string (with
+            # display_value=true) or a {display_value, link} dict — handle both.
+            "created_by": (item.get("sys_created_by") or {}).get("display_value")
+            if isinstance(item.get("sys_created_by"), dict) else item.get("sys_created_by"),
+            "updated_by": (item.get("sys_updated_by") or {}).get("display_value")
+            if isinstance(item.get("sys_updated_by"), dict) else item.get("sys_updated_by"),
         }
         
         return {
@@ -255,7 +264,7 @@ def get_script_include(
         logger.error(f"Error getting script include: {e}")
         return {
             "success": False,
-            "message": f"Error getting script include: {str(e)}",
+            "message": f"Error getting script include: {error_detail(e)}",
         }
 
 
@@ -326,7 +335,7 @@ def create_script_include(
         logger.error(f"Error creating script include: {e}")
         return ScriptIncludeResponse(
             success=False,
-            message=f"Error creating script include: {str(e)}",
+            message=f"Error creating script include: {error_detail(e)}",
         )
 
 
@@ -425,7 +434,7 @@ def update_script_include(
         logger.error(f"Error updating script include: {e}")
         return ScriptIncludeResponse(
             success=False,
-            message=f"Error updating script include: {str(e)}",
+            message=f"Error updating script include: {error_detail(e)}",
         )
 
 
@@ -483,5 +492,5 @@ def delete_script_include(
         logger.error(f"Error deleting script include: {e}")
         return ScriptIncludeResponse(
             success=False,
-            message=f"Error deleting script include: {str(e)}",
+            message=f"Error deleting script include: {error_detail(e)}",
         ) 

@@ -316,6 +316,29 @@ class TestScriptIncludeTools(unittest.TestCase):
         self.assertIn("Error creating script include", result.message)
 
 
+    @patch("requests.get")
+    def test_get_script_include_by_sys_id(self, mock_get):
+        """A raw 32-char sys_id is queried via the record URL (not a name query),
+        and a string sys_created_by (display_value=true) is handled."""
+        sys_id = "0123456789abcdef0123456789abcdef"
+        resp = MagicMock()
+        resp.raise_for_status = MagicMock()
+        resp.json.return_value = {"result": {
+            "sys_id": sys_id, "name": "TestSI", "script": "x", "description": "d",
+            "active": "true", "sys_created_by": "admin", "sys_updated_by": "admin",
+        }}
+        mock_get.return_value = resp
+
+        result = get_script_include(self.server_config, self.auth_manager,
+                                    GetScriptIncludeParams(script_include_id=sys_id))
+
+        self.assertTrue(result["success"])
+        self.assertEqual(sys_id, result["script_include"]["sys_id"])
+        self.assertEqual("admin", result["script_include"]["created_by"])  # string handled
+        # queried the record URL by sys_id, not a name-based query
+        self.assertTrue(mock_get.call_args[0][0].endswith(f"/table/sys_script_include/{sys_id}"))
+
+
 class TestScriptIncludeParams(unittest.TestCase):
     """Tests for the script include parameters."""
 

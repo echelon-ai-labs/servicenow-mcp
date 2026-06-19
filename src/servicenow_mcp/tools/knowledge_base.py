@@ -5,15 +5,62 @@ This module provides tools for managing knowledge bases, categories, and article
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import requests
 from pydantic import BaseModel, Field
 
 from servicenow_mcp.auth.auth_manager import AuthManager
+from servicenow_mcp.utils.api import error_detail
 from servicenow_mcp.utils.config import ServerConfig
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_article_sys_id(
+    config: ServerConfig, auth_manager: AuthManager, article_id: str
+) -> Tuple[Optional[str], Optional[str]]:
+    """Resolve a KB article number (e.g. KB0010001) or sys_id to a sys_id.
+
+    The Table API record URL needs a sys_id, so a KB number would otherwise
+    404. Returns ``(sys_id, error_message)``.
+    """
+    if len(article_id) == 32 and all(c in "0123456789abcdef" for c in article_id):
+        return article_id, None
+    try:
+        r = requests.get(
+            f"{config.api_url}/table/kb_knowledge",
+            params={"sysparm_query": f"number={article_id}", "sysparm_limit": 1, "sysparm_fields": "sys_id"},
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        r.raise_for_status()
+    except requests.RequestException as e:
+        return None, f"Failed to find article '{article_id}': {error_detail(e)}"
+    result = r.json().get("result", [])
+    if not result:
+        return None, f"Article not found: {article_id}"
+    return result[0].get("sys_id"), None
+
+
+def _v(field) -> str:
+    """Raw value of a Table API field (handles sysparm_display_value=all dicts)."""
+    if isinstance(field, dict):
+        return field.get("value", "")
+    return field if field is not None else ""
+
+
+def _d(field) -> str:
+    """Display value of a Table API field (handles sysparm_display_value=all dicts)."""
+    if isinstance(field, dict):
+        return field.get("display_value", "")
+    return field if field is not None else ""
+
+
+class DeleteArticleParams(BaseModel):
+    """Parameters for deleting a knowledge article."""
+
+    article_id: str = Field(..., description="Article number (e.g. KB0010001) or sys_id")
 
 
 class CreateKnowledgeBaseParams(BaseModel):
@@ -191,7 +238,7 @@ def create_knowledge_base(
         logger.error(f"Failed to create knowledge base: {e}")
         return KnowledgeBaseResponse(
             success=False,
-            message=f"Failed to create knowledge base: {str(e)}",
+            message=f"Failed to create knowledge base: {error_detail(e)}",
         )
 
 
@@ -314,7 +361,7 @@ def list_knowledge_bases(
         logger.error(f"Failed to list knowledge bases: {e}")
         return {
             "success": False,
-            "message": f"Failed to list knowledge bases: {str(e)}",
+            "message": f"Failed to list knowledge bases: {error_detail(e)}",
             "knowledge_bases": [],
             "count": 0,
             "limit": params.limit,
@@ -340,10 +387,13 @@ def create_category(
     """
     api_url = f"{config.api_url}/table/kb_category"
 
-    # Build request data
+    # Build request data.
+    # kb_category links to its container via parent_id + parent_table (a flexible
+    # document reference), NOT a kb_knowledge_base column (that field doesn't
+    # exist on kb_category and is silently dropped). A top-level category points
+    # at the knowledge base; a subcategory points at the parent category.
     data = {
         "label": params.title,
-        "kb_knowledge_base": params.knowledge_base,
         # Convert boolean to string "true"/"false" as ServiceNow expects
         "active": str(params.active).lower(),
     }
@@ -351,9 +401,11 @@ def create_category(
     if params.description:
         data["description"] = params.description
     if params.parent_category:
-        data["parent"] = params.parent_category
-    if params.parent_table:
-        data["parent_table"] = params.parent_table
+        data["parent_id"] = params.parent_category
+        data["parent_table"] = params.parent_table or "kb_category"
+    else:
+        data["parent_id"] = params.knowledge_base
+        data["parent_table"] = "kb_knowledge_base"
     
     # Log the request data for debugging
     logger.debug(f"Creating category with data: {data}")
@@ -390,7 +442,7 @@ def create_category(
         logger.error(f"Failed to create category: {e}")
         return CategoryResponse(
             success=False,
-            message=f"Failed to create category: {str(e)}",
+            message=f"Failed to create category: {error_detail(e)}",
         )
 
 
@@ -450,7 +502,7 @@ def create_article(
         logger.error(f"Failed to create article: {e}")
         return ArticleResponse(
             success=False,
-            message=f"Failed to create article: {str(e)}",
+            message=f"Failed to create article: {error_detail(e)}",
         )
 
 
@@ -470,7 +522,10 @@ def update_article(
     Returns:
         Response with the updated article details.
     """
-    api_url = f"{config.api_url}/table/kb_knowledge/{params.article_id}"
+    sys_id, error = _resolve_article_sys_id(config, auth_manager, params.article_id)
+    if error:
+        return ArticleResponse(success=False, message=error)
+    api_url = f"{config.api_url}/table/kb_knowledge/{sys_id}"
 
     # Build request data
     data = {}
@@ -510,7 +565,7 @@ def update_article(
         logger.error(f"Failed to update article: {e}")
         return ArticleResponse(
             success=False,
-            message=f"Failed to update article: {str(e)}",
+            message=f"Failed to update article: {error_detail(e)}",
         )
 
 
@@ -530,7 +585,10 @@ def publish_article(
     Returns:
         Response with the published article details.
     """
-    api_url = f"{config.api_url}/table/kb_knowledge/{params.article_id}"
+    sys_id, error = _resolve_article_sys_id(config, auth_manager, params.article_id)
+    if error:
+        return ArticleResponse(success=False, message=error)
+    api_url = f"{config.api_url}/table/kb_knowledge/{sys_id}"
 
     # Build request data
     data = {
@@ -549,22 +607,44 @@ def publish_article(
             timeout=config.timeout,
         )
         response.raise_for_status()
-
         result = response.json().get("result", {})
 
+        # Re-fetch the authoritative workflow_state: on instances with a Knowledge
+        # state flow, a direct workflow_state write can be reverted by a business
+        # rule, so the PATCH response is not a reliable indicator of the result.
+        actual = result.get("workflow_state")
+        try:
+            chk = requests.get(
+                api_url, params={"sysparm_fields": "workflow_state"},
+                headers=auth_manager.get_headers(), timeout=config.timeout,
+            )
+            chk.raise_for_status()
+            actual = chk.json().get("result", {}).get("workflow_state", actual)
+        except requests.RequestException:
+            pass
+
+        achieved = str(actual) == str(params.workflow_state)
+        if achieved:
+            message = f"Article workflow_state set to '{actual}'"
+        else:
+            message = (
+                f"Requested workflow_state '{params.workflow_state}' but the instance reports "
+                f"'{actual}'. Article state is likely governed by the Knowledge state flow / "
+                f"approval workflow on this knowledge base."
+            )
         return ArticleResponse(
-            success=True,
-            message="Article published successfully",
-            article_id=params.article_id,
+            success=achieved,
+            message=message,
+            article_id=sys_id,
             article_title=result.get("short_description"),
-            workflow_state=result.get("workflow_state"),
+            workflow_state=actual,
         )
 
     except requests.RequestException as e:
         logger.error(f"Failed to publish article: {e}")
         return ArticleResponse(
             success=False,
-            message=f"Failed to publish article: {str(e)}",
+            message=f"Failed to publish article: {error_detail(e)}",
         )
 
 
@@ -650,34 +730,15 @@ def list_articles(
                     logger.warning("Skipping non-dictionary article item: %s", article_item)
                     continue
                     
-                # Safely extract values
-                article_id = article_item.get("sys_id", "")
-                title = article_item.get("short_description", "")
-                
-                # Extract nested values safely
-                knowledge_base = ""
-                if isinstance(article_item.get("kb_knowledge_base"), dict):
-                    knowledge_base = article_item["kb_knowledge_base"].get("display_value", "")
-                
-                category = ""
-                if isinstance(article_item.get("kb_category"), dict):
-                    category = article_item["kb_category"].get("display_value", "")
-                
-                workflow_state = ""
-                if isinstance(article_item.get("workflow_state"), dict):
-                    workflow_state = article_item["workflow_state"].get("display_value", "")
-                
-                created = article_item.get("sys_created_on", "")
-                updated = article_item.get("sys_updated_on", "")
-                
+                # Unwrap sysparm_display_value=all fields ({value, display_value})
                 articles.append({
-                    "id": article_id,
-                    "title": title,
-                    "knowledge_base": knowledge_base,
-                    "category": category,
-                    "workflow_state": workflow_state,
-                    "created": created,
-                    "updated": updated,
+                    "id": _v(article_item.get("sys_id")),
+                    "title": _d(article_item.get("short_description")),
+                    "knowledge_base": _d(article_item.get("kb_knowledge_base")),
+                    "category": _d(article_item.get("kb_category")),
+                    "workflow_state": _d(article_item.get("workflow_state")),
+                    "created": _v(article_item.get("sys_created_on")),
+                    "updated": _v(article_item.get("sys_updated_on")),
                 })
         else:
             logger.warning("Result is not a list: %s", result)
@@ -695,7 +756,7 @@ def list_articles(
         logger.error(f"Failed to list articles: {e}")
         return {
             "success": False,
-            "message": f"Failed to list articles: {str(e)}",
+            "message": f"Failed to list articles: {error_detail(e)}",
             "articles": [],
             "count": 0,
             "limit": params.limit,
@@ -719,7 +780,10 @@ def get_article(
     Returns:
         Dictionary with article details.
     """
-    api_url = f"{config.api_url}/table/kb_knowledge/{params.article_id}"
+    sys_id, error = _resolve_article_sys_id(config, auth_manager, params.article_id)
+    if error:
+        return {"success": False, "message": error}
+    api_url = f"{config.api_url}/table/kb_knowledge/{sys_id}"
 
     # Build query parameters
     query_params = {
@@ -808,7 +872,7 @@ def get_article(
         logger.error(f"Failed to get article: {e}")
         return {
             "success": False,
-            "message": f"Failed to get article: {str(e)}",
+            "message": f"Failed to get article: {error_detail(e)}",
         }
 
 
@@ -837,13 +901,13 @@ def list_categories(
         "sysparm_display_value": "all",
     }
 
-    # Build query string
+    # Build query string. Categories link to their container via parent_id +
+    # parent_table (kb_knowledge_base for top-level, kb_category for subcategories).
     query_parts = []
     if params.knowledge_base:
-        # Try different query format to ensure we match by sys_id value
-        query_parts.append(f"kb_knowledge_base.sys_id={params.knowledge_base}")
+        query_parts.append(f"parent_id={params.knowledge_base}^parent_table=kb_knowledge_base")
     if params.parent_category:
-        query_parts.append(f"parent.sys_id={params.parent_category}")
+        query_parts.append(f"parent_id={params.parent_category}^parent_table=kb_category")
     if params.active is not None:
         query_parts.append(f"active={str(params.active).lower()}")
     if params.query:
@@ -894,62 +958,21 @@ def list_categories(
                     logger.warning("Skipping non-dictionary category item: %s", category_item)
                     continue
                     
-                # Safely extract values
-                category_id = category_item.get("sys_id", "")
-                title = category_item.get("label", "")
-                description = category_item.get("description", "")
-                
-                # Extract knowledge base - handle both dictionary and string cases
-                knowledge_base = ""
-                kb_field = category_item.get("kb_knowledge_base")
-                if isinstance(kb_field, dict):
-                    knowledge_base = kb_field.get("display_value", "")
-                elif isinstance(kb_field, str):
-                    knowledge_base = kb_field
-                # Also check if kb_knowledge_base is missing but there's a separate value field
-                elif "kb_knowledge_base_value" in category_item:
-                    knowledge_base = category_item.get("kb_knowledge_base_value", "")
-                elif "kb_knowledge_base.display_value" in category_item:
-                    knowledge_base = category_item.get("kb_knowledge_base.display_value", "")
-                
-                # Extract parent category - handle both dictionary and string cases
-                parent = ""
-                parent_field = category_item.get("parent")
-                if isinstance(parent_field, dict):
-                    parent = parent_field.get("display_value", "")
-                elif isinstance(parent_field, str):
-                    parent = parent_field
-                # Also check alternative field names
-                elif "parent_value" in category_item:
-                    parent = category_item.get("parent_value", "")
-                elif "parent.display_value" in category_item:
-                    parent = category_item.get("parent.display_value", "")
-                
-                # Convert active to boolean - handle string or boolean types
-                active_field = category_item.get("active")
-                if isinstance(active_field, str):
-                    active = active_field.lower() == "true"
-                elif isinstance(active_field, bool):
-                    active = active_field
-                else:
-                    active = False
-                
-                created = category_item.get("sys_created_on", "")
-                updated = category_item.get("sys_updated_on", "")
-                
+                # Unwrap sysparm_display_value=all fields ({value, display_value}).
+                # parent_id holds the container; parent_table says whether that is
+                # the knowledge base or a parent category.
+                container = _d(category_item.get("parent_id"))
+                container_table = _v(category_item.get("parent_table"))
                 categories.append({
-                    "id": category_id,
-                    "title": title,
-                    "description": description,
-                    "knowledge_base": knowledge_base,
-                    "parent_category": parent,
-                    "active": active,
-                    "created": created,
-                    "updated": updated,
+                    "id": _v(category_item.get("sys_id")),
+                    "title": _d(category_item.get("label")),
+                    "description": _d(category_item.get("description")),
+                    "knowledge_base": container if container_table == "kb_knowledge_base" else "",
+                    "parent_category": container if container_table == "kb_category" else "",
+                    "active": str(_v(category_item.get("active"))).lower() == "true",
+                    "created": _v(category_item.get("sys_created_on")),
+                    "updated": _v(category_item.get("sys_updated_on")),
                 })
-                
-                # Log for debugging purposes
-                logger.debug(f"Processed category: {title}, KB: {knowledge_base}, Parent: {parent}")
         else:
             logger.warning("Result is not a list: %s", result)
 
@@ -966,9 +989,42 @@ def list_categories(
         logger.error(f"Failed to list categories: {e}")
         return {
             "success": False,
-            "message": f"Failed to list categories: {str(e)}",
+            "message": f"Failed to list categories: {error_detail(e)}",
             "categories": [],
             "count": 0,
             "limit": params.limit,
             "offset": params.offset,
-        } 
+        }
+
+
+def delete_article(
+    config: ServerConfig,
+    auth_manager: AuthManager,
+    params: DeleteArticleParams,
+) -> ArticleResponse:
+    """
+    Delete a knowledge article in ServiceNow.
+
+    Args:
+        config: Server configuration.
+        auth_manager: Authentication manager.
+        params: Parameters identifying the article (number or sys_id).
+
+    Returns:
+        Response with the result of the operation.
+    """
+    sys_id, error = _resolve_article_sys_id(config, auth_manager, params.article_id)
+    if error:
+        return ArticleResponse(success=False, message=error)
+
+    try:
+        response = requests.delete(
+            f"{config.api_url}/table/kb_knowledge/{sys_id}",
+            headers=auth_manager.get_headers(),
+            timeout=config.timeout,
+        )
+        response.raise_for_status()
+        return ArticleResponse(success=True, message="Article deleted successfully", article_id=sys_id)
+    except requests.RequestException as e:
+        logger.error(f"Failed to delete article: {e}")
+        return ArticleResponse(success=False, message=f"Failed to delete article: {error_detail(e)}") 
