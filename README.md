@@ -4,9 +4,7 @@
 
 A Model Completion Protocol (MCP) server implementation for ServiceNow, allowing Claude to interact with ServiceNow instances.
 
-<a href="https://glama.ai/mcp/servers/@osomai/servicenow-mcp">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/@osomai/servicenow-mcp/badge" alt="ServiceNow Server MCP server" />
-</a>
+[![Listed on Skillselion](https://skillselion.com/badge/mcp/tool/io.github.echelon-ai-labs/servicenow-mcp.svg)](https://skillselion.com/mcp/tool/io.github.echelon-ai-labs/servicenow-mcp)
 
 ## Overview
 
